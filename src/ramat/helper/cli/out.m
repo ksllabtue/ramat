@@ -14,6 +14,12 @@ function out(str, opts)
 
     end
 
+    if ~isvalid(opts.gui)
+        warning("GUI element deleted.");
+        fprintf(str);
+        return;
+    end
+
     % Clear GUI text component
     if opts.clear
         opts.gui.Value = "";

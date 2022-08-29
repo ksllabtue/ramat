@@ -39,6 +39,26 @@ classdef Project < handle
             self.root.add_child_group("Analysis_Result_Root");
         end
 
+        function import_data(self, path, opts)
+            %IMPORT_DATA
+
+            arguments
+                self Project;
+                path string = "";
+                opts.type int8 = 0;
+                opts.folder logical = false;
+                opts.processing = get_processing_options;
+                opts.start_path = pwd;
+            end
+
+            % Call import data function
+            data = import_data(path, type=opts.type, folder=opts.folder, processing=opts.processing, start_path=pwd);
+
+            % Append to project
+            self.append_data(data);
+            
+        end
+
         function append_data(self, dataset, group)
             %APPEND_DATA:
             %   Appends a dataset (set of DataContainer) to the project,

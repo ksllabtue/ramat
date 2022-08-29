@@ -54,14 +54,18 @@ function update_app_selection_changed(app, event)
     
     % Check if non-homogeneous data types have been selected, e.g. spectral
     % data and image data.
-    if ~all(node_data(1).dataType == vertcat(node_data.dataType))
-        return;
-    end
+    if ~node_data.is_homogeneous_array(), return; end
 
     node_data_type = node_data(1).dataType;
 
     % Check if multiple images have been selected
     if (numel(node_data) > 1 && node_data_type == "ImageData")
+        return;
+    end
+
+    % Check if multiple LA scans have been selected
+    data_items = node_data.getDataHandles();
+    if (numel(node_data) > 1 && any([data_items.DataSize] > 1))
         return;
     end
 

@@ -79,7 +79,9 @@ classdef (Abstract) DataItem < handle & matlab.mixin.Heterogeneous & matlab.mixi
             %required for heterogeneous arrays in MATLAB
             o = eq@handle(a,b);
         end
+    end
 
+    methods
         function format_list = get_export_formats(self)
             %GET_EXPORT_FORMATS Returns list of exportable formats.
 
@@ -94,9 +96,6 @@ classdef (Abstract) DataItem < handle & matlab.mixin.Heterogeneous & matlab.mixi
             
         end
 
-    end
-
-    methods
         function [ax, f] = plot(self, kwargs)
             % Get axes handle or create new figure window with empty axes
 
@@ -200,6 +199,26 @@ classdef (Abstract) DataItem < handle & matlab.mixin.Heterogeneous & matlab.mixi
 
     % Operator overloading
     methods (Sealed)
+        function bool = is_homogeneous_array(self)
+            %IS_HOMOGENEOUS_ARRAY Checks whether an array of DataItems is a
+            %homogeneous array of the same class. Returns a boolean
+            %(MATLAB: logical).
+            bool = class(self) ~= "DataItem";
+        end
+
+        function out = filter_data_type(self, filter)
+            %FILTER_DATA_TYPE Filter DataItems in an array of DataItems
+            %based on their class
+
+            arguments
+                self;
+                filter string = ""; % e.g. "SpecData"
+            end
+
+            % Filter
+            out = self([self.Type] == filter);
+        end
+
         function r = op_start(varargin)
             %OP_START Checks whether operation can be performed.
             if nargin == 1

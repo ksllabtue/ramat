@@ -58,6 +58,11 @@ classdef SpecData < SpecDataABC
         DataSize;
     end
 
+    % List of exportable formats
+    properties (SetAccess = private, GetAccess = private)
+        format_list = ["csv";"mat";"xlsx"];
+    end
+
     % Signatures
     methods
         remove_baseline(self, method, kwargs);

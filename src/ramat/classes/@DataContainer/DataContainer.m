@@ -173,6 +173,8 @@ classdef DataContainer < Container
                 end
             end
 
+            uimenu(cm, Text="Export ...", MenuSelectedFcn=@(~,~) ExportOptionsDialog(selection));
+
             function gen_child_group_nodes(parent_node, group, app)
                 %GEN_CHILD_GROUP_NODES Recursive function to generate all
                 %child nodes
@@ -204,7 +206,6 @@ classdef DataContainer < Container
             % Nested functions
             function add_to_new_analysis(~,~,app, selection)
                 % User has selected <ADD TO NEW ANALYSIS>
-
                 selection.add_to_new_subset();
                 
                 % Update GUI Managers
@@ -212,8 +213,7 @@ classdef DataContainer < Container
             end
 
             function add_to_analysis(~, ~, app, analysis, selection)
-                % User has selected <ADD TO ANALYSIS>
-                
+                % User has selected <ADD TO ANALYSIS>           
                 selection.add_to_subset(analysis);
                 
                 % Update GUI Managers
@@ -222,7 +222,6 @@ classdef DataContainer < Container
 
             function move_to_group(~, ~, app, group_handle, parent_group)
                 % User has selected <MOVE TO GROUP xy>
-
                 % Get selected dataset handles
                 dataset = vertcat(app.DataMgrTree.SelectedNodes.NodeData);
 
@@ -232,8 +231,52 @@ classdef DataContainer < Container
                 % Update datamgr
                 app.updatemgr();
             end
+        end
 
+        function export(self, varargin)
+            %EXPORT Export method for data containers. Will call export
+            %method of main DataItem.
 
+            % Can only export similar data types
+            if ~self.is_homogeneous_array(), return; end
+
+            % Get DataItems
+            data = self.getDataHandles();
+            if isempty(data), return; end
+
+            % Export
+            data.export(varargin{:});
+        end
+
+        function format_list = get_export_formats(self)
+            %GET_EXPORT_FORMATS Returns list of exportable formats.
+
+            % Can only export similar data types
+            if ~self.is_homogeneous_array(), return; end
+
+            % Retrieve format list, based on one DataItem
+            format_list = self(1).Data.get_export_formats();
+            
+        end
+
+        function bool = is_homogeneous_array(self)
+            %IS_HOMOGENEOUS_ARRAY Checks whether an array of DataContainers
+            %contain Data of the same class. Returns a boolean
+            %(MATLAB: logical).
+            bool = all(self(1).dataType == vertcat(self.dataType));
+        end
+
+        function out = filter_data_type(self, filter)
+            %FILTER_DATA_TYPE Filter DataContainers in an array of
+            %DataContainers based on a filter
+
+            arguments
+                self DataContainer;
+                filter string = ""; % e.g. "SpecData"
+            end
+
+            % Filter
+            out = self(vertcat(self.dataType) == filter);
         end
    
                 

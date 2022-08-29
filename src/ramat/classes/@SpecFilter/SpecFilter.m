@@ -35,15 +35,19 @@ classdef SpecFilter < DataItem
             %   result:     Output
             
             idxrange = specdat.wavnumtoidx( self.range );
+
+            operand = specdat.data(:, :, idxrange(1):idxrange(2));
             
             switch self.operation
                 case 'sum'
-                    result = sum( specdat.data(:, :, idxrange(1):idxrange(2)), 3);
+                    result = sum(operand, 3);
                 case 'avg'
-                    result = mean( specdat.data(:, :, idxrange(1):idxrange(2)), 3);
+                    result = mean(operand, 3);
+                case 'max'
+                    result = max(operand, [], 3);
                 case 'maxmin'
-                    hi = max( specdat.data(:, :, idxrange(1):idxrange(2)), [], 3);
-                    lo = min( specdat.data(:, :, idxrange(1):idxrange(2)), [], 3);
+                    hi = max(operand, [], 3);
+                    lo = min(operand, [], 3);
                     result = hi - lo;
             end
             

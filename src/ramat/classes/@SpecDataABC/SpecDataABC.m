@@ -95,13 +95,16 @@ classdef (Abstract) SpecDataABC < DataItem
 
             % Ask for path
             if options.path == ""
-                [file, path] = self.export_ui_dialog(format=options.format, format_list=self.format_list);
+                [file, path] = self(1).export_ui_dialog(format=options.format, format_list=self(1).format_list);
                 options.path = fullfile(path, file);
             end
 
+            write_mode = "overwrite";
+            if options.format == "xlsx", write_mode = "overwritesheet"; end
+
             % Write to file
             fprintf("\nWriting to file...\n");
-            writematrix(export_array, options.path);
+            writematrix(export_array, options.path, WriteMode=write_mode);
             fprintf("Finished.\n");
             
         end
@@ -127,24 +130,49 @@ classdef (Abstract) SpecDataABC < DataItem
 
             numarray = [];
 
-            if options.include_wavenum, numarray = self.graph; end
+            % Create column with wave numbers
+            wavenum_col = [];
+            if options.include_wavenum, wavenum_col = self(1).graph; end
+            if options.rand_subset, wavenum_col = [0; wavenum_col]; end
+
+            % Prepare for concatenation of multiple spectra
+            num_items = numel(self);
+            if num_items > 1, wavenum_col = [0; wavenum_col]; end
 
             flatdata = [];
             pos = [];
+            i = 1;
 
-            if options.rand_subset
-                % Get a small selection
-                [flatdata, pos] = self.select_random(options.rand_num);
+            % Go through every spectrum s in self
+            for s = self(:)' 
+                % Data segment creation
+                if options.rand_subset
+                    % Get a small selection
+                    [sel_data, pos] = s.select_random(options.rand_num);
+                    % Create data segment
+                    dat = zeros(s.GraphSize + 1, size(sel_data, 2));
+                    dat(1,:) = pos(:)';         % Append positions (spectral indices) as first row
+                    dat(2:end, :) = sel_data;   % Append selected data on following rows.
+                else
+                    % Create data segment
+                    dat = s.get_flatdata();
+                end
 
-                % Append positions (spectral indices) as first row
-                flatdata = [pos(:)' ; flatdata];
-                numarray = [0; numarray];
-            else
-                flatdata = self.get_flatdata();
+                % When multiple items are selected, include index as first
+                % row.
+                if num_items > 1
+                    id_row = repmat(i,[1, size(dat, 2)]);
+                    dat = [id_row; dat];
+                end
+
+                % Cocatenate data segment.
+                flatdata = [flatdata dat];
+
+                i = i+1;
             end
 
             % Append flat data
-            numarray = [numarray flatdata];
+            numarray = [wavenum_col flatdata];
 
             % Transpose
             if options.direction == "horizontal", numarray = transpose(numarray); end
@@ -253,6 +281,11 @@ classdef (Abstract) SpecDataABC < DataItem
                 update_data_items_tree(app, self.parent_container);
             end
 
+        end
+
+        function format_list = get_export_formats(self)
+            %GET_EXPORT_FORMATS Returns list of exportable formats.
+            format_list = self.format_list;
         end
         
     end

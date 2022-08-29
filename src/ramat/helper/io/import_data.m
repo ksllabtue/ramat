@@ -35,8 +35,11 @@ function data = import_data(path, opts)
         opts.start_path = pwd;
     end
 
+    % Default output
+    data = [];
+
     % Get input path and validate input
-    if isempty(path)
+    if (isempty(path) || path == "")
         % Ask for user input
         try
             [files, base_dir] = get_path_user_input(opts.folder, start_path=opts.start_path);
