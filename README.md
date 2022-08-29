@@ -78,9 +78,19 @@ Manipulated data does not have to be stored back into the project, as all data c
 
 Imported data will be shown as DataContainers under *Data Root* > *New Import*. You can rename the name of the folders anything you want. The Data Manager allows you to rename, duplicate, or remove individual measurements. Right-clicking any of the DataContainers will present a context menu based on the selected DataContainers.
 
+**Example 1**: Suppose you want two subtract two spectra from each other.
 
+1. Select the two measurements in the **Data Manager** panel.
+2. *Right-click* on one of the measurements.
+3. Select *Math ...* > *A - B*.
 
-To preview the data stored within the DataContainers in the **Data Preview** pane, simply click the measurement. A DataContainer can contain the following DataItems:
+![Context Menu in the Data Manager Panel](docs/images/data_manager_context_menu.png)
+
+To preview the data stored within the DataContainers in the **Data Preview** panel, simply click the measurement.
+
+### Working in the Data Item Manager
+
+A DataContainer can contain the following DataItems:
 * **SpecData**: Spectral Raman data with spatial information; either a single spectrum or a large-area scan
 * **SpectrumSimple**: Spectral data without spatial information, e.g. an extracted loadings plot.
 * **TextData**: Plain-text data
@@ -88,6 +98,8 @@ To preview the data stored within the DataContainers in the **Data Preview** pan
 * **SpecFilter**: Spectral filter
 * **Mask**
 * **PeakTable**
+
+These items will be displayed in the **Data Item Manager** panel underneath the preview panel.
 
 ## Data Correction
 
