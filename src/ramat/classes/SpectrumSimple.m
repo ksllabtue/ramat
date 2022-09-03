@@ -65,16 +65,18 @@ classdef SpectrumSimple < SpecDataABC
 
             arguments
                 self;
+                kwargs.?PlotOptions;
                 kwargs.Axes = [];                
                 kwargs.plot_type = "Overlaid";   % 'Overlaid', 'Stacked'
                 kwargs.plot_stack_distance = 1;   % Stacking Shift Multiplier
                 kwargs.normalize = false;
                 kwargs.plot_peaks = true;
-                kwargs.legend_entries string = self.legend_entries;
+                kwargs.legend_entries string = vertcat(self.legend_entries);
+                kwargs.plot_zero_line logical = true;
             end
 
-            % Call plot at superclass, to properly set axes
-            [ax, f] = plot@DataItem(self, Axes=kwargs.Axes);
+            % Set plotting axes
+            [ax, f] = self.plot_start(Axes=kwargs.Axes);
 
             % Set-up Axes
             ax.PlotBoxAspectRatioMode = 'auto';
@@ -153,6 +155,12 @@ classdef SpectrumSimple < SpecDataABC
             leg = legend(ax, vertcat(kwargs.legend_entries));
             leg.Color = 'none';
             leg.Box = "off";
+
+            % Add zero line?
+            if kwargs.plot_zero_line
+                line(ax,ax.XLim,[0 0],Color=[0 0 0]);
+                leg.String(end) = [];
+            end
 
             % Release hold
             hold(ax, 'off');

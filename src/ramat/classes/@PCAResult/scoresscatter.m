@@ -11,6 +11,7 @@ function scoresscatter(pcaresult, pcax, options)
         options.Axes = []; % Handle to Axes, if empty a new figure will be created
         options.ErrorEllipse logical = false;
         options.CenteredAxes logical = true;
+        options.color_order = [];
     end
 
     if isempty(pcaresult.source_data)
@@ -50,10 +51,13 @@ function scoresscatter(pcaresult, pcax, options)
     end
 
     % Make sure we don't have a cursor for this kind of plot
-    unassign_spectral_cursor(f);
-    
+    unassign_spectral_cursor(f);  
+
     % Get standard MATLAB plot colors
-    co = get(ax,'ColorOrder');
+    if isempty(options.color_order), options.color_order = ax.ColorOrder; end
+
+    % Set color order
+    co = options.color_order;
     hold(ax, 'on');
     
     % Initialize graphics placeholder array
@@ -140,6 +144,9 @@ function scoresscatter(pcaresult, pcax, options)
         % For MATLAB <2020a
         ax.pbaspect = [1 1 1];
     end
+
+    % Set Title
+    title(ax, pcaresult.name);
 
     % Set Legend
     groupNames = vertcat(pcaresult.source_data.name);

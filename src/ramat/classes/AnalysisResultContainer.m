@@ -15,7 +15,7 @@ classdef AnalysisResultContainer < Container
     end
 
     properties (Dependent)
-        data PCAResult;
+        data;
         dataType;
     end
 
@@ -58,9 +58,8 @@ classdef AnalysisResultContainer < Container
 
             arguments
                 self AnalysisResultContainer;
+                kwargs.?PlotOptions;
                 kwargs.Axes = [];
-                kwargs.Preview = true;
-                kwargs.PlotType = "";
             end
 
             if isempty(self.data)
@@ -71,6 +70,17 @@ classdef AnalysisResultContainer < Container
             dataitem = self.data;
             kwargs = unpack(kwargs);
             ax = dataitem.plot(kwargs{:});
+
+        end
+
+        function dat = get_data(self, type)
+
+            arguments
+                self;
+                type string = "";
+            end
+
+            dat = vertcat(self.data);
 
         end
 

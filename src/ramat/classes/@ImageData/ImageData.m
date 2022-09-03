@@ -58,11 +58,15 @@ classdef ImageData < DataItem
 
             arguments
                 self;
-                kwargs.Axes = [];                
+                kwargs.?PlotOptions;
+                kwargs.Axes = [];
             end
 
+            % Cannot plot more than one image simultaneously
+            if numel(self) > 1, return; end
+
             % Call plot at superclass, to properly set axes
-            [ax, f] = plot@DataItem(self, Axes=kwargs.Axes);
+            [ax, f] = self.plot_start(Axes=kwargs.Axes);
 
             % plot imagedata
             if numel(size(self.data)) == 3

@@ -98,7 +98,18 @@ classdef DataContainer < Container
         end
         
 
-        
+        function dat = get_data(self, type)
+
+            arguments
+                self DataContainer;
+                type string = "";
+            end
+
+            dat = vertcat(self.Data);
+
+        end
+
+
         function h = getDataHandles(self, data_type)
             % Get handles of spectral data objects
             
@@ -259,12 +270,6 @@ classdef DataContainer < Container
             
         end
 
-        function bool = is_homogeneous_array(self)
-            %IS_HOMOGENEOUS_ARRAY Checks whether an array of DataContainers
-            %contain Data of the same class. Returns a boolean
-            %(MATLAB: logical).
-            bool = all(self(1).dataType == vertcat(self.dataType));
-        end
 
         function out = filter_data_type(self, filter)
             %FILTER_DATA_TYPE Filter DataContainers in an array of

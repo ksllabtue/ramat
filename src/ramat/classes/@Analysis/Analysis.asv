@@ -35,7 +35,7 @@ classdef Analysis < handle
 
         end
         
-        function append_data(self, dataset, new_group_name, opts)
+        function append_data(self, dataset, new_group_name)
             %APPEND_DATA Appends new data to the current analysis. This
             %function will also take care of the grouping within the
             %analysis
@@ -43,17 +43,12 @@ classdef Analysis < handle
             %   Usage:
             %       [analysis].append_data(dataset) will append data based
             %       on parent groups of dataset
-            %
-            %       [analysis].append_data(dataset, "group A") will append
-            %       all data to analysis group called "group A"
-            %       irrespective of the original parent groups of the
-            %       dataset
+            %       [analysis].append_data(dataset, "group"
 
             arguments
                 self Analysis;
                 dataset DataContainer;
                 new_group_name string = "";
-                opts.level = 1;
             end
 
             % If group name is given, use this name
@@ -64,8 +59,7 @@ classdef Analysis < handle
             end
 
             % If groups are not given, infer from parent Group
-            parent_groups = dataset.get_parent_groups(unique=true, level=opts.level);
-
+            parent_groups = unique([dataset.parent]);
             for group = parent_groups
                 % Create group
                 newgroup = self.add_group(group.name);

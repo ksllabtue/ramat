@@ -21,6 +21,7 @@ function pcaresult = calculatePCA(self, options)
     
     % Return results as an PCAResult Object
     pcaresult = PCAResult(graph_base, coefs, score, variance);
+    pcaresult.source_opts = options;
 
 end
 

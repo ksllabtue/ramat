@@ -30,14 +30,17 @@ classdef PeakTable < DataItem
             % PEAKTABLE Construct an instance of this class
 
             arguments
-                peaks struct;
-%                 locations (:,1) {mustBeNumeric,mustBeReal,mustBeEqualSize(peaks,locations)};
-                parent_specdata {mustBeA(parent_specdata, "SpecDataABC")} = [];
+                peaks {mustBeA(peaks, ["struct", "double"])} = [];
+                parent_specdata {mustBeA(parent_specdata, "SpecDataABC")} = SpecData.empty;
                 name string = "";
             end
 
+            % Parse input into struct
+            if isa(peaks, "double")
+                peaks = PeakTable.convert_to_struct(peaks);
+            end
+
             self.peaks = peaks;
-%             self.locations = locations;
             self.parent_specdata = parent_specdata;
             self.name = name;
         end
@@ -115,6 +118,21 @@ classdef PeakTable < DataItem
 
         end
 
+    end
+
+    methods (Static)
+        function peaks = convert_to_struct(peaks)
+            %CONVERT_TO_STRUCT Converts array as input into struct with
+            %fields "x" and "y"
+
+            arguments
+                peaks double = [];
+            end
+            
+            x = peaks(:,1);
+            y = peaks(:,2);
+            peaks = struct('x', num2cell(x(:)), 'y', num2cell(y(:)));
+        end
     end
 
 

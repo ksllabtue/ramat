@@ -8,9 +8,9 @@ function add_to_subset(self, subsetHandle, new_group_name)
         new_group_name string = "";
     end
 
-    if (new_group_name == "")
-        new_group_name = self(1).parent.name;
-    end
+%     if (new_group_name == "")
+%         new_group_name = self(1).parent.name;
+%     end
     
     subsetHandle.append_data(self, new_group_name);
 end

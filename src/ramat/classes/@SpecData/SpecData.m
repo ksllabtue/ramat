@@ -68,6 +68,7 @@ classdef SpecData < SpecDataABC
         remove_baseline(self, method, kwargs);
         out = clipByMask(self, mask);
         y = tsne(self, opts);
+        out = trim_spectrum(self, startg, endg, opts);
     end
     
     methods
@@ -107,14 +108,28 @@ classdef SpecData < SpecDataABC
             arguments
                 self
                 kwargs.copy logical = false;
+                kwargs.range double = [];
             end
+
+            fprintf("Normalizing " + num2str(numel(self)) + " spectra.\n");
             
             % Repeat operation for each spectral data object
-            for i = 1:numel(self)
+            for s = self(:)'
 
                 % Divide by sums of the individual spectra
-                dat = self(i).data;
-                norm_data = dat ./ sum( dat, 3 );
+                dat = s.data;
+
+                % Sum
+                if isempty(kwargs.range)
+                    % Calculate sum of entire spectrum
+                    sumdat = sum(dat, 3);
+                else
+                    % Calculate sum of part of spectrum
+                    idx = s.wavnumtoidx(kwargs.range);
+                    sumdat = sum(dat(:,:,idx(1):idx(2)), 3);
+                end
+
+                norm_data = dat ./ sumdat;
 
                 if kwargs.copy
                     % Create copy
@@ -124,7 +139,7 @@ classdef SpecData < SpecDataABC
                     self.append_sibling(new_specdat);
                 else
                     % Overwrite
-                    self(i).data = norm_data;
+                    s.data = norm_data;
                 end
             end
         end
@@ -149,19 +164,26 @@ classdef SpecData < SpecDataABC
         end
 
         function [ax, f] = plot(self, options)
-            %PLOT
+            %PLOT Default plotting method, overloads default plot function.
+            %   This is the default method to plot data within the SpecData. It
+            %   only takes the data container as necessary input argument, additional
+            %   keyword arguments provide plotting options and axis handles.
+            %
+            %   It generates SpectrumSimple instances and calls the plot
+            %   method of SpectrumSimple.
 
             arguments
-                self
+                self SpecData;
+                options.?PlotOptions;
                 options.Axes = [];
             end
 
             spec_simple = self.get_spectrum_simple();
 
-            [ax, f] = spec_simple.plot(Axes=options.Axes);
+            opts = namedargs2cell(options);
+            [ax, f] = spec_simple.plot(opts{:});
 
             spec_simple.delete();
-            
         end
         
 
@@ -300,6 +322,7 @@ classdef SpecData < SpecDataABC
 
         %% Overrides
 
+      
         function avg_specdat = mean(self)
             % MEAN Returns averaged spectral data
 

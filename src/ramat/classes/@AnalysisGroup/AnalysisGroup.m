@@ -90,6 +90,7 @@ classdef AnalysisGroup < handle
                 options.custom_selection DataContainer = DataContainer.empty;
                 options.specdata logical = false;
                 options.accumsize logical = false;
+                options.ignore_empty_groups logical = true;
             end
             
             s = struct();
@@ -98,16 +99,26 @@ classdef AnalysisGroup < handle
             if options.specdata, s.specdata = []; end
             if options.accumsize, s.accumsize = []; end
 
-            for i = 1:numel(self)
-                s(i).name = self(i).display_name;
+            i = 1;
+            for group = self(:)'
+
+                s(i).name = group.display_name;
 
                 % Filter selection only
                 if options.selection
-                    s(i).children = intersect(self(i).children, self(i).parent.Selection);
+                    s(i).children = intersect(group.children, group.parent.Selection);
                 elseif ~isempty(options.custom_selection)
-                    s(i).children = intersect(self(i).children, options.custom_selection);
+                    s(i).children = intersect(group.children, options.custom_selection);
                 else
-                    s(i).children = self(i).children;
+                    s(i).children = group.children;
+                end
+
+                % Check after selection, do we still have any data left for
+                % this group?
+                if (isempty(s(i).children) && options.ignore_empty_groups)
+                    % Remove empty groups from struct
+                    % This is highly recommended for PCA!!!
+                    continue;
                 end
 
                 % Get children link targets: datacontainers
@@ -125,8 +136,11 @@ classdef AnalysisGroup < handle
                     s(i).accumsize = sum([s(i).specdata.DataSize]);
                 end
 
+                % Move to next iteration in struct
+                i = i + 1;
+
             end
-            
+
         end
 
         function l = get_static_list(self, opts)

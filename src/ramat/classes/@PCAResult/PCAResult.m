@@ -17,6 +17,7 @@ classdef PCAResult < DataItem
         % Source Reference
         source Analysis = Analysis.empty();
         source_data struct = struct();
+        source_opts struct = struct();
 
         % Other info
         CoefsBase double = [0 1];               % Spectral Base for loadings plot of the coefficients
@@ -32,6 +33,9 @@ classdef PCAResult < DataItem
         NumGroups;
         NumDataPoints;
         Range;
+
+        % Source reference
+        source_grouping uint32;
     end
     
     methods
@@ -77,8 +81,15 @@ classdef PCAResult < DataItem
 
         function recalculate(self)
             %RECALCULATE Recalculates PCA from linked analysis
+
+            range = [];
+            algorithm = "svd";
+
+            % Retrieve original options
+            if isfield(self.source_opts, "range"), range = self.source_opts.range; end
+            if isfield(self.source_opts, "algorithm"), algorithm = self.source_opts.algorithm; end
             
-            new_pca_result = self.source.compute_pca();
+            new_pca_result = self.source.compute_pca(Range=range, algorithm=algorithm);
             self.update(new_pca_result);
         end
 
@@ -115,21 +126,34 @@ classdef PCAResult < DataItem
             range = [min(self.CoefsBase), max(self.CoefsBase)];
         end
 
+        function groupings = get.source_grouping(self)
+            %SOURCE_GROUPING This should be faster, TODO
+            
+            groupings = [];
+            for i = 1:numel(self.source_data)
+                groupsize = self.source_data(i).accumsize;
+                groupings = [groupings; repmat(i, [groupsize, 1])];
+            end
+            groupings = uint32(groupings);
+        end
+
         function ax = plot(self, kwargs)
             %PLOT Default plotting function of PCAResult
 
             arguments
                 self;
+                kwargs.?PlotOptions;
                 kwargs.Axes = [];
                 kwargs.PCs uint8 = [1 2];
-                kwargs.Preview = true;
-                kwargs.PlotType = "";
+                kwargs.ErrorEllipse logical = false;
+                kwargs.CenteredAxes logical = true;
+                kwargs.color_order = [];
             end
 
             ax = [];
 
             pcax = kwargs.PCs;
-            self.scoresscatter(pcax, Axes=kwargs.Axes);
+            self.scoresscatter(pcax, Axes=kwargs.Axes, ErrorEllipse=kwargs.ErrorEllipse, CenteredAxes=kwargs.CenteredAxes, color_order=kwargs.color_order);
 
         end
 

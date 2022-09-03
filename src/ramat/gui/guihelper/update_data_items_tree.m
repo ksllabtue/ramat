@@ -7,8 +7,8 @@ function update_data_items_tree(app, container)
     %       explored
 
     arguments
-        app ramatguiapp;
-        container;
+        app ramatguiapp;    % app
+        container;          % selected container
     end
     
     tree = app.DataItemsTree;
@@ -41,8 +41,9 @@ function update_data_items_tree(app, container)
     end
 
     % Show data container node
+    display_text = "[" + class(container) + ": " + container.dataType + "] " + container.display_name;
     dc_node = uitreenode(tree, ...
-        Text=container.display_name, ...
+        Text=display_text, ...
         NodeData=container);
 
     % Show every data item in container
@@ -54,6 +55,12 @@ function update_data_items_tree(app, container)
 
         % Assign context menu
         item_node.ContextMenu = cm;
+
+        % Is this the main data item?
+        if item == container.get_data()
+            tree.addStyle(uistyle(FontWeight="bold"), node=item_node)
+            tree.SelectedNodes = item_node;
+        end
     end
 
     % Expand tree

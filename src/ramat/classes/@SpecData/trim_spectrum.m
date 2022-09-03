@@ -1,4 +1,4 @@
-function self = trimSpectrum(self, startG, endG, kwargs)
+function self = trim_spectrum(self, startG, endG, kwargs)
     % Trims spectral data to [startG, endG]
     % startG and endG should be provided in the graph units, ie. if
     % graph units are given in 1/cm, the trim limits should be in

@@ -67,8 +67,14 @@ classdef (Abstract) DataItem < handle & matlab.mixin.Heterogeneous & matlab.mixi
             
             s = struct();
             for i = 1:numel(self)
-                s(i).Type = self(i).Type;
-                s(i).Description = self(i).Description;
+                s(i).name = self(i).name;
+                s(i).type = self(i).Type;
+                s(i).datasize = [];
+                if isa(self(i),"SpecDataABC")
+                    s(i).datasize = self(i).DataSize;
+                    s(i).graphsize = self(i).GraphSize;
+                end
+                s(i).description = self(i).description;
                 s(i).DataItem = self(i);
             end
             
@@ -97,6 +103,19 @@ classdef (Abstract) DataItem < handle & matlab.mixin.Heterogeneous & matlab.mixi
         end
 
         function [ax, f] = plot(self, kwargs)
+            %PLOT Placeholder
+
+            arguments
+                self;
+                kwargs.?PlotOptions;
+            end
+
+            ax = [];
+            f = [];
+            
+        end
+
+        function [ax, f] = plot_start(self, kwargs)
             % Get axes handle or create new figure window with empty axes
 
             arguments

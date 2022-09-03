@@ -167,24 +167,9 @@ classdef (Abstract) Container < handle
 
         end
 
-%         function result = is_a_parent(self, group, opts)
-%             %IS_A_PARENT Returns whether a given group is a (higher-level)
-%             %parent of the given containers
-% 
-%             arguments
-%                 self;
-%                 group Group;
-%                 opts.limit = 10;
-%             end
-% 
-%             for i = 1:opts.limit
-%                 % Reached the end?
-%                 if any(isempty([self.parent])), return; end
-%                 if any(isa([self.parent], "Project")), return; end
-% 
-%             end
-% 
-%         end
+        function result = is_a_parent(self, group)
+            %IS_A_PARENT Returns whether a given group is a (higher-level)
+            %parent of the given containers
 
     end
 
