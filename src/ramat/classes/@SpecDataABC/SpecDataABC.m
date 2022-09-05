@@ -84,6 +84,8 @@ classdef (Abstract) SpecDataABC < DataItem
                 options.include_wavenum logical = true;
                 options.rand_subset logical = true;
                 options.rand_num uint32 = 100;
+                options.zero_to_nan logical = false;
+                options.ignore_nan logical = true;
             end
 
             % Prepare data
@@ -91,7 +93,9 @@ classdef (Abstract) SpecDataABC < DataItem
                 direction=options.direction, ...
                 include_wavenum=options.include_wavenum, ...
                 rand_subset=options.rand_subset, ...
-                rand_num=options.rand_num);
+                rand_num=options.rand_num, ...
+                zero_to_nan = options.zero_to_nan, ...
+                ignore_nan = options.ignore_nan);
 
             % Ask for path
             if options.path == ""
@@ -126,6 +130,8 @@ classdef (Abstract) SpecDataABC < DataItem
                 options.include_wavenum logical = true;
                 options.rand_subset logical = false;    % Select random subset of data
                 options.rand_num uint32 = 100;          % Number of randomly selected spectra
+                options.zero_to_nan logical = false;
+                options.ignore_nan logical = true;
             end
 
             numarray = [];
@@ -148,7 +154,7 @@ classdef (Abstract) SpecDataABC < DataItem
                 % Data segment creation
                 if options.rand_subset
                     % Get a small selection
-                    [sel_data, pos] = s.select_random(options.rand_num);
+                    [sel_data, pos] = s.select_random(options.rand_num, zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan);
                     % Create data segment
                     dat = zeros(s.GraphSize + 1, size(sel_data, 2));
                     dat(1,:) = pos(:)';         % Append positions (spectral indices) as first row
@@ -179,13 +185,26 @@ classdef (Abstract) SpecDataABC < DataItem
             
         end
 
-        function flatdata = get_flatdata(self)
+        function flatdata = get_flatdata(self, options)
             %FLATDATA
             % Default. Overriden in <SpecData>
-            flatdata = self.data;
+
+            arguments
+                self;
+                options.zero_to_nan logical = false;
+                options.ignore_nan logical = true;
+            end
+
+            dat = self.data;
+
+            % Process data
+            if options.zero_to_nan, dat = SpecData.zero_to_nan(dat); end
+            if options.ignore_nan, dat = SpecData.remove_nan(dat); end
+            
+            flatdata = dat;
         end
 
-        function [data, pos] = select_random(self, rand_num)
+        function [data, pos] = select_random(self, rand_num, options)
             %SELECT_RANDOM Selects a random number of spectra from the
             %data and outputs corresponding spectral indices.
             %
@@ -197,10 +216,13 @@ classdef (Abstract) SpecDataABC < DataItem
             arguments
                 self;
                 rand_num uint32 = 100;
+                options.zero_to_nan logical = false;
+                options.ignore_nan logical = true;
             end
             
             % This is returned by default
-            data = self.get_flatdata();
+            opts = unpack(options);
+            data = self.get_flatdata(opts{:});
             pos = 1:self.DataSize;
 
             % Check if we can actually sample from this
@@ -213,6 +235,41 @@ classdef (Abstract) SpecDataABC < DataItem
             pos = randperm(self.DataSize, rand_num);
             data = data(:, pos);
 
+        end
+
+        function set_zero_to_nan(self, options)
+            %SET_ZERO_TO_NAN Sets spectra, which are completely zeroed out
+            %to NaN.
+            %   This function sets all pixels in which the entire spectrum
+            %   equals to zero to NaN. This is a wrapper function of
+            %   get_zero_to_nan, which only retrieves the data with all
+            %   pixels in which all zeroed-out pixels are set to NaN
+
+            arguments
+                self {mustBeA(self, "SpecDataABC")};
+                options.copy logical = false;
+            end
+            
+            if options.copy
+                self = copy(self);
+                self.append_sibling(self);
+            end
+
+            self.data = self.get_zero_to_nan();
+        end
+
+        function nandata = get_zero_to_nan(self)
+            %GET_ZERO_TO_NAN Returns spectrum in which zeroed-out pixels
+            %are set to NaN
+            %   This function sets all pixels in which the entire spectrum
+            %   equals to zero to NaN.
+
+            arguments
+                self {mustBeA(self, "SpecDataABC")};
+            end
+
+            % Positions that should be set to NaN
+            nandata = SpecDataABC.zero_to_nan(self.data);
         end
         
         % DEPENDENT PROPERTIES
@@ -290,8 +347,52 @@ classdef (Abstract) SpecDataABC < DataItem
         
     end
 
-    methods (Abstract)
+    methods (Static)
+        function data = zero_to_nan(data)
+            %ZERO_TO_NAN Returns spectrum in which zeroed-out pixels are
+            %set to NaN
 
+            arguments
+                data {mustBeNumeric};
+            end
+
+            sizes = size(data);
+            
+            switch numel(sizes)
+                case 2
+                    % Positions that should be set to NaN
+                    idx = all(data == 0, 1);
+                    % Set to nan
+                    data(:,idx) = deal(nan);
+                case 3
+                    % Positions that should be set to NaN
+                    idx = all(data == 0, 3);
+                    idx = repmat(idx, [1 1 sizes(3)]);
+                    % Set to nan
+                    data(idx) = nan;
+            end
+            
+        end
+
+        function data = remove_nan(data)
+            %REMOVE_NAN Removes all nan spectra. Only works with flattened
+            %spectra!
+
+            arguments
+                data {mustBeNumeric};
+            end
+
+            sizes = size(data);
+
+            % Can only remove nan from flattened array
+            if numel(sizes) > 2, return; end
+            
+            % Positions that should be set to NaN
+            idx = all(isnan(data), 1);
+
+            % Set to nan
+            data(:,idx) = [];
+        end
     end
 
     % Spectral operations
