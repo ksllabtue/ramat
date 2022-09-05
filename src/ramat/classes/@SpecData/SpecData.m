@@ -244,9 +244,23 @@ classdef SpecData < SpecDataABC
 
         end
 
-        function flatdata = get_flatdata(self)
+        function flatdata = get_flatdata(self, options)
             %GET_FLATDATA Returns m*n (two-dimensional) matrix.
-            flatdata = self.FlatDataArray;                
+
+            arguments
+                self SpecData;
+                options.zero_to_nan logical = false;
+                options.ignore_nan logical = true;
+            end
+
+            dat = self.data;
+
+            % Process data
+            if options.zero_to_nan, dat = SpecData.zero_to_nan(dat); end
+            if options.ignore_nan, dat = SpecData.remove_nan(dat); end
+            
+            % Flatten
+            flatdata = flatten(dat);
         end
 
 
@@ -363,11 +377,7 @@ classdef SpecData < SpecDataABC
         end
         
         function flatdata = get.FlatDataArray(self)
-            % Returns a two-dimensional m-by-n array of spectral data
-            graphsize = size(self.data, 3);
-            
-            flatdata = permute(self.data, [3 1 2]);
-            flatdata = reshape(flatdata, graphsize, [], 1);
+            flatdata = flatten(self.data);
         end
 
         function filtereddata = get.FilteredData(self)
@@ -397,6 +407,18 @@ classdef SpecData < SpecDataABC
         
 
         
+    end
+
+    methods (Static)
+        function flatdata = flatten(data)
+            %FLATTEN Convert ixjxk (three-dimensional) data array to ixj
+            %data array
+            %   Returns a two-dimensional m-by-n array of spectral data
+
+            graphsize = size(data, 3);
+            flatdata = permute(data, [3 1 2]);
+            flatdata = reshape(flatdata, graphsize, [], 1);
+        end
     end
 end
 
