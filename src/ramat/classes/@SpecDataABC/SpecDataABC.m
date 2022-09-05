@@ -323,6 +323,7 @@ classdef (Abstract) SpecDataABC < DataItem
             r.graph = vec(1).graph;
             r.graph_unit = vec(1).graph_unit;
         end
+
     end
 end
 

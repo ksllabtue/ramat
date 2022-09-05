@@ -83,6 +83,16 @@ classdef PeakTable < DataItem
 
         end
 
+        function print(self)
+            %PRINT Prints the peaktable to console
+            fprintf("\n== PeakTable ==\n");
+            fprintf("Name:       " + self.name + "\n");
+            if ~isempty(self.parent_specdata), fprintf("Parent:     " + [self.parent_specdata.name] + "\n"); end
+            fprintf("Min prom:   %f\n\n", self.min_prominence);
+            disp(self.as_table);
+        end
+
+
         function add_context_actions(self, cm, node, app)
             %ADD_CONTEXT_ACTIONS Retrieve all (possible) actions for this
             %data item that should be displayed in the context menu
@@ -101,16 +111,14 @@ classdef PeakTable < DataItem
 
             uimenu(cm, Text="Plot", MenuSelectedFcn=@(~,~) plot(self));
 
-            uimenu(cm, Text="Print Peak Table", MenuSelectedFcn={@print, self});
+            uimenu(cm, Text="Print Peak Table", MenuSelectedFcn=@(~,~) print(self));
             
             menu_export = uimenu(cm, Text="Export as ...");
             uimenu(menu_export, Text="Comma-separated values (.csv, .txt)", MenuSelectedFcn={@export, self, "csv"});
             uimenu(menu_export, Text="MATLAB file (.mat)", MenuSelectedFcn={@export, self, "mat"});
 
 
-            function print(~, ~, self)
-                disp(self.as_table);
-            end
+
 
             function export(~, ~, self, format)
                 self.export(format=format);

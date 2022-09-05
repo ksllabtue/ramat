@@ -33,26 +33,67 @@ classdef SpecFilter < DataItem
             %   RESULT
             %   specdat:    Operand (Input)
             %   result:     Output
-            
-            idxrange = specdat.wavnumtoidx( self.range );
 
-            operand = specdat.data(:, :, idxrange(1):idxrange(2));
-            
-            switch self.operation
-                case 'sum'
-                    result = sum(operand, 3);
-                case 'avg'
-                    result = mean(operand, 3);
-                case 'max'
-                    result = max(operand, [], 3);
-                case 'maxmin'
-                    hi = max(operand, [], 3);
-                    lo = min(operand, [], 3);
-                    result = hi - lo;
+            arguments
+                self SpecFilter;
+                specdat SpecData;
+            end
+
+            % Preallocate
+            result = nan(specdat(1).XSize, specdat(1).YSize, numel(specdat));
+            i = 1;
+                        
+            for s = specdat(:)'
+                idxrange = s.wavnumtoidx( self.range );
+    
+                operand = s.data(:, :, idxrange(1):idxrange(2));
+                
+                switch self.operation
+                    case 'sum'
+                        res = sum(operand, 3);
+                    case 'avg'
+                        res = mean(operand, 3);
+                    case 'max'
+                        res = max(operand, [], 3);
+                    case 'min'
+                        res = min(operand, [], 3);
+                    case 'maxmin'
+                        hi = max(operand, [], 3);
+                        lo = min(operand, [], 3);
+                        res = hi - lo;
+                end
+
+                % Append to output
+                result(:,:,i) = res;
+                i = i+1;
+            end
+
+            % Simplify
+            if (size(result,1) == size(result,2) && size(result,2) == 1)
+                result = permute(result, [3 1 2]);
             end
             
         end
-        
+    end
+
+    methods (Static)
+        function result = calc(specdat, options)
+            %CALC Calculate filter result once
+
+            arguments
+                specdat
+                options.range = [];
+                options.operation = "sum";
+            end
+
+            options = unpack(options);
+            filter = SpecFilter(options{:});
+
+            result = filter.getResult(specdat);
+
+            filter.delete();
+        end
+
     end
 end
 

@@ -98,20 +98,11 @@ classdef SpectrumSimple < SpecDataABC
             
             % Calculate shift in case stacked data is plotted
             if kwargs.plot_type == "Stacked"
-                % Stacked Plot
-                multiplier = kwargs.plot_stack_distance;
-                
-                if kwargs.normalize
-                    stackShift = multiplier;
-                else
-                    % Apply multiplier to maximum value
-                    stackShift = max(self) * multiplier;
-                end
-                
+                stacked = true;
             else
-                % Overlaid Plot
-                stackShift = 0;
+                stacked = false;
             end
+            stack_shift = SpectrumSimple.calculate_stack_shift(kwargs.plot_stack_distance, stacked, kwargs.normalize);
 
             % PLOTTING
             for i = 1:numel(self)
@@ -133,9 +124,8 @@ classdef SpectrumSimple < SpecDataABC
                 end
                 
                 % Stacked Plot
-                if kwargs.plot_type == "Stacked"
-                    ydat = ydat - (i - 1)*stackShift;
-                    
+                if stacked
+                    ydat = ydat - (i - 1)*stack_shift;
                 end
 
                 plot(ax, xdat, ydat);
@@ -174,5 +164,28 @@ classdef SpectrumSimple < SpecDataABC
             datasize = sizes(2);
         end
     end
-    
+
+    methods (Static)
+        function shift = calculate_stack_shift(multiplier, stacked, normalization)
+
+            arguments
+                multiplier double = 1;
+                stacked logical = true;
+                normalization logical = false;
+            end
+
+            shift = 0;
+
+            if ~stacked, return; end
+
+            if normalization
+                shift = multiplier;
+            else
+                % Apply multiplier to maximum value
+                shift = max(self) * multiplier;
+            end
+
+        end
+    end
+        
 end
