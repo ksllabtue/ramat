@@ -218,6 +218,17 @@ classdef Analysis < handle
             
         end
 
+        function disp(self)
+            %PRINT Print info to terminal
+
+            for analysis = self(:)'
+                fprintf("\n");
+                fprintf("Analysis Name: " + analysis.name + "\n");
+                disp(struct2table(analysis.struct()));
+            end
+            
+        end
+
         function s = struct(self, options)
             %STRUCT Output data formatted as structure
             %   This method overrides struct()

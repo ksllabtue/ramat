@@ -1,3 +1,2 @@
-%% Run RAMAT in GUI mode
-
+init;
 ramatgui;
