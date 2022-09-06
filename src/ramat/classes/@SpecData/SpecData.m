@@ -377,7 +377,7 @@ classdef SpecData < SpecDataABC
         end
         
         function flatdata = get.FlatDataArray(self)
-            flatdata = flatten(self.data);
+            flatdata = SpecData.flatten(self.data);
         end
 
         function filtereddata = get.FilteredData(self)
@@ -414,6 +414,8 @@ classdef SpecData < SpecDataABC
             %FLATTEN Convert ixjxk (three-dimensional) data array to ixj
             %data array
             %   Returns a two-dimensional m-by-n array of spectral data
+
+            
 
             graphsize = size(data, 3);
             flatdata = permute(data, [3 1 2]);

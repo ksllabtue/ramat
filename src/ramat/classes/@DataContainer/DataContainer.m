@@ -99,16 +99,59 @@ classdef DataContainer < Container
         
 
         function dat = get_data(self, type)
+            %GET_DATA Returns main data item of every DataContainer
+            %
+            %   Input:
+            %       self    DataContainer
+            %       type    (optional)  DataType filter
+            %
+            %   Usage:
+            %       sd = dc.get_data("SpecData")
+            %           returns all SpecDatas of the DataContainer array dc
 
             arguments
                 self DataContainer;
                 type string = "";
             end
 
+            % Retrieve data
             dat = vertcat(self.Data);
 
+            % Filter data
+            if type ~= ""
+                dat = dat.filter_data_type(type);
+            end
         end
 
+        function dat = get_data_as_array(self, options)
+            %GET_DATA_AS_ARRAY Returns numerical data of every data item in
+            %every provided DataContainer
+
+            arguments
+                self DataContainer;
+                options.flatten logical = true;
+                options.preview logical = false;
+            end
+
+            % Selection must be homogeneous
+            if ~self.is_homogeneous_array(), return; end
+
+            % Only return previews
+            if options.preview
+                dat = horzcat(self.DataPreview);
+                return
+            end
+
+            % Get data items
+            data_items = self.get_data();
+
+            % Get data from data items
+            dat = horzcat(data_items.data);
+
+            % Flatten, if requested
+            if options.flatten, dat = SpecData.flatten(dat); end
+
+        end
 
         function h = getDataHandles(self, data_type)
             % Get handles of spectral data objects

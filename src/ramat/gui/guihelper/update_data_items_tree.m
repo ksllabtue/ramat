@@ -58,7 +58,11 @@ function update_data_items_tree(app, container)
 
         % Is this the main data item?
         if item == container.get_data()
-            tree.addStyle(uistyle(FontWeight="bold"), node=item_node)
+            v = ver('MATLAB');
+            if str2num(v.Version) > 9.12
+                boldstyle = uistyle(FontWeight="bold");
+                tree.addStyle(boldstyle, node=item_node)
+            end
             tree.SelectedNodes = item_node;
         end
     end
