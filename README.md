@@ -1,3 +1,5 @@
+<img src="docs/images/ramat_logo.png" width="66%" />
+
 # RaMAT
 **RaMAT** is a MATLAB-based software package for quick analysis, spectral correction, and plotting of spectroscopical Raman data.
 Data can be imported straight from WiTEC software or as one of the many supported ASCII formats.
@@ -113,15 +115,20 @@ These items will be displayed in the **Data Item Manager** panel underneath the 
 
 ## Data Analysis
 
-### Principal Component Analysis
+Data organization for data analysis is done separately from the data organization in the Data Manager.
 
-1. Create Spectral Analysis
-    1. Select measurements (hold CTRL to select multiple measurements)
-    2. Add measurements to an Analysis Subset by *Right Click* > `Add to New Analysis`.
-2. Group and Select Measurements
+To create a new **Spectral Analysis**:
+
+1. Select measurements (hold CTRL to select multiple measurements)
+2. Add measurements to an Analysis by *Right Click* > `Add to New Analysis` or add measurements to an existing Analysis.
+3. Group and Select Measurements
     1. In the lower Analysis pane, assign the measurements groups.
     2. Select measurements/groups to be analysed
-3. Create Principal Component Analysis
+
+### Principal Component Analysis
+
+1. Create or select spectral analysis as described previously.
+2. Create Principal Component Analysis
     1. Create new principal component analysis under `Spectral Analysis` > `Principal Component Analysis`
     2. Define the range for the PCA.
     3. Select `Create new PCA`
