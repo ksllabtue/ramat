@@ -82,7 +82,7 @@ classdef SpecFilter < DataItem
 
             arguments
                 specdat
-                options.range = [];
+                options.range = [1000, 1300];
                 options.operation = "sum";
             end
 

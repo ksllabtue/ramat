@@ -79,7 +79,7 @@ function update_app_selection_changed(app, event)
     ax = app.UIPreviewAxes;
 
     % Invoke plot method of selected data containers 
-    node_data.plot(Axes=ax, plot_type=plot_type, preview=true);
+    node_data.plot(Axes=ax, plot_type=plot_type, preview=true, PCs=app.get_selected_pcs);
 
     if (node_data_type == "SpecData" && node_data(1).Data.DataSize > 1)
         % Open dialogs for specdata large area scans
