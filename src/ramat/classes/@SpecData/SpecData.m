@@ -244,8 +244,11 @@ classdef SpecData < SpecDataABC
 
         end
 
-        function flatdata = get_flatdata(self, options)
+        function flatdata_out = get_flatdata(self, options)
             %GET_FLATDATA Returns m*n (two-dimensional) matrix.
+            %   Returns flattened array. Input can be an array of multiple
+            %   SpecData objects. In that case, the sizes should be
+            %   consistent.
 
             arguments
                 self SpecData;
@@ -253,14 +256,38 @@ classdef SpecData < SpecDataABC
                 options.ignore_nan logical = true;
             end
 
-            dat = self.data;
+            % Prepare output
+            rownum = self(1).GraphSize;
+            colnum = sum([self.DataSize]);
+            flatdata_out = zeros(rownum, colnum, 'double');
 
-            % Process data
-            if options.zero_to_nan, dat = SpecData.zero_to_nan(dat); end
-            if options.ignore_nan, dat = SpecData.remove_nan(dat); end
-            
-            % Flatten
-            flatdata = flatten(dat);
+            % Size checks
+            if ~all([self.GraphSize] == rownum)
+                fprintf("Data sizes are inconsistent. Cannot concatenate flat data into array.\n");
+                return;
+            end
+
+            colidx = 1;
+
+            for spectrum = self(:)'
+                % Get spectral data
+                dat = spectrum.data;
+
+                % Process data
+                if options.zero_to_nan, dat = SpecData.zero_to_nan(dat); end
+                if options.ignore_nan, dat = SpecData.remove_nan(dat); end
+
+                % Flatten
+                flat = SpecData.flatten(dat);
+                numcols = size(flat,2);
+                
+                % Insert
+                flatdata_out(:,colidx:colidx+numcols-1) = flat;
+                
+                % Update column index
+                colidx = colidx + numcols;
+            end
+
         end
 
 

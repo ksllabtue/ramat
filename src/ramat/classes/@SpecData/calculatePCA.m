@@ -14,6 +14,12 @@ function pcaresult = calculatePCA(self, options)
         options.invert_pcs = false;         % Invert all scores with respect to pc1
         options.normalize logical = false;
         options.normalization_range double = [];
+        options.ask_user_input = true;     % Ask for additional user input through prompt
+    end
+
+    % Ask for user input
+    if options.ask_user_input
+        options = ask_normalization(options);
     end
 
     fprintf("Calculating PCA using " + options.algorithm + " algorithm.\n");
@@ -46,6 +52,29 @@ function pcaresult = calculatePCA(self, options)
     % Return results as an PCAResult Object
     pcaresult = PCAResult(graph_base, coefs, scores, variance);
     pcaresult.source_opts = options;
+
+    function options = ask_normalization(options)
+        % Ask additional information on normalization
+
+        % Ask prompt
+        prompt = {'Should the spectra be renormalized? Enter a range (in cm-1) or leave empty for no normalization.'};
+        dlgtitle = 'Normalization';
+        dims = [1 70];
+        definput = {'500-3200'};
+        answer = inputdlg(prompt,dlgtitle,dims,definput);
+
+        % Parse input
+        range = str2num(replace(answer{1},"-",","));
+        fprintf("Entered range: " + num2str(range) + "\n");
+
+        % Parse input
+        if isempty(range), return; end
+        if numel(range) ~= 2, return; end
+
+        options.normalize = true;
+        options.normalization_range = range;
+
+    end
 
 end
 

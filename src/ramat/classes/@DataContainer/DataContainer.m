@@ -153,6 +153,31 @@ classdef DataContainer < Container
 
         end
 
+        function dat = get_data_as_flatdata(self, options)
+            %GET_DATA_AS_FLATDATA Returns flattened numerical data of every
+            %data item in every provided DataContainer
+
+            arguments
+                self;
+                options.?ExportOptions;
+            end
+
+            % Selection must be homogeneous
+            if ~self.is_homogeneous_array(), return; end
+
+            % It should be spectral data
+            self = self.filter_data_type("SpecData");
+            if isempty(self), return; end
+
+            % Get data items
+            data_items = self.get_data();
+
+            % Call function of SpecDataABC
+            options = unpack(options);
+            dat = data_items.get_flatdata(options{:});
+
+        end
+
         function h = getDataHandles(self, data_type)
             % Get handles of spectral data objects
             
@@ -312,7 +337,6 @@ classdef DataContainer < Container
             format_list = self(1).Data.get_export_formats();
             
         end
-
 
         function out = filter_data_type(self, filter)
             %FILTER_DATA_TYPE Filter DataContainers in an array of

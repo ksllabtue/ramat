@@ -187,7 +187,7 @@ classdef (Abstract) SpecDataABC < DataItem
 
         function flatdata = get_flatdata(self, options)
             %FLATDATA
-            % Default. Overriden in <SpecData>
+            % PLACEHOLDER. This function is overriden in <SpecData>
 
             arguments
                 self;
