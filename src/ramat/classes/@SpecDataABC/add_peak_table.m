@@ -5,6 +5,7 @@ function peak_table = add_peak_table(self, options)
     arguments
         self {mustBeA(self, "SpecDataABC")};
         options.min_prominence = 0.1;
+        options.min_height double = -Inf;
         options.negative_peaks = false;
     end
 

@@ -8,6 +8,9 @@ classdef PlotOptions
         plot_peaks = true;
         legend_entries string = "";
         plot_zero_line logical = false;
+        legend = true;
+        symbols = ["o", "square", "^", "v", "diamond"];
+        use_symbols = false;
 
         % PCAs
         PCs uint8 = [1 2];

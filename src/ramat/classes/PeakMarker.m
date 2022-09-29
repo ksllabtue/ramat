@@ -9,6 +9,8 @@ classdef PeakMarker < handle
         dbg_box;
         parent;
         precision = 0;
+        yshift = 0;
+        fontsize = 11;
     end
 
     properties (Access=private)
@@ -29,23 +31,27 @@ classdef PeakMarker < handle
     end
 
     methods
-        function self = PeakMarker(ax,x,y,neg)
+        function self = PeakMarker(ax,x,y,neg,options)
             arguments
                 ax;
                 x;
                 y;
                 neg = false;
+                options.fontsize = 11;
             end
 
             self.x = x;
             self.y = y;
             self.neg = neg;
             self.parent = ax;
+            self.fontsize = options.fontsize;
 
             self.attach_to_axes();
 
             self.text = text(ax,x,y,self.gen_label());
             self.text.HorizontalAlignment = 'center';
+            self.text.FontWeight = "bold";
+            self.text.FontSize = self.fontsize;
 
 %             self.dbg_box = rectangle(ax, Position=self.bbox, EdgeColor=[1 0 0]);
 
@@ -79,7 +85,16 @@ classdef PeakMarker < handle
                 self PeakMarker;
                 other PeakMarker;
             end
+
+            % Reduce collision chance by reducing font size a bit
+            self.text.FontSize = round(self.fontsize/2);
+            other.text.FontSize = round(self.fontsize/2);
+
             status = (self.left < other.right && self.right > other.left && self.top > other.bottom && self.bottom < other.top );
+
+            % Reset
+            self.text.FontSize = self.fontsize;
+            other.text.FontSize = other.fontsize;
         end
 
         function run_iter_collision_check(self, i)
@@ -143,9 +158,23 @@ classdef PeakMarker < handle
 
         function update(self)
             self.text.Position(1) = mean(self.x);
-            self.text.Position(2) = max(self.y);
+            self.text.Position(2) = max(self.y) + self.yshift;
             self.text.String = self.gen_label();
 %             self.dbg_box.Position = self.bbox;
+        end
+
+        function fix_shift(self, stack_shift)
+            
+            arguments
+                self
+                stack_shift double = [];
+            end
+
+            if ~isempty(stack_shift), self.yshift = stack_shift; end
+
+            self.text.Position(2) = self.y + self.yshift;
+            self.marker.Position(2) = self.y + self.yshift;
+                        
         end
 
         function prev = get.prev(self)

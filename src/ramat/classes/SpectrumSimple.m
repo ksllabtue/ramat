@@ -102,7 +102,7 @@ classdef SpectrumSimple < SpecDataABC
             else
                 stacked = false;
             end
-            stack_shift = SpectrumSimple.calculate_stack_shift(kwargs.plot_stack_distance, stacked, kwargs.normalize);
+            stack_shift = self.calculate_stack_shift(kwargs.plot_stack_distance, stacked, kwargs.normalize);
 
             % PLOTTING
             for i = 1:numel(self)
@@ -163,12 +163,11 @@ classdef SpectrumSimple < SpecDataABC
             sizes = size(self.data);
             datasize = sizes(2);
         end
-    end
 
-    methods (Static)
-        function shift = calculate_stack_shift(multiplier, stacked, normalization)
+        function shift = calculate_stack_shift(self, multiplier, stacked, normalization)
 
             arguments
+                self;
                 multiplier double = 1;
                 stacked logical = true;
                 normalization logical = false;
@@ -186,6 +185,10 @@ classdef SpectrumSimple < SpecDataABC
             end
 
         end
+    end
+
+    methods (Static)
+        
     end
         
 end

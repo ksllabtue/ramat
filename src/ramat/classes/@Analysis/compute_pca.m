@@ -14,6 +14,8 @@ function pcaresult = compute_pca(self, options)
         options.Range double = [];
         options.Selection (:,:) DataContainer = DataContainer.empty;
         options.algorithm = "svd";
+        options.normalize logical = false;
+        options.normalization_range double = [];
     end
     
     pcaresult = PCAResult.empty;
@@ -29,7 +31,11 @@ function pcaresult = compute_pca(self, options)
     end
 
     % Calculate PCA
-    pcaresult = specdata.calculatePCA(range = options.Range, algorithm = options.algorithm);
+    pcaresult = specdata.calculatePCA( ...
+        range = options.Range, ...
+        algorithm = options.algorithm, ...
+        normalize = options.normalize, ...
+        normalization_range = options.normalization_range);
 
     % Provide source reference
     pcaresult.source = self;

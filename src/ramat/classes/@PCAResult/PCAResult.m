@@ -63,7 +63,7 @@ classdef PCAResult < DataItem
         end
         
         % Method Signatures
-        scoresscatter(self, pcax);
+        [ax, f] = scoresscatter(self, pcax);
         plotLoadings(self, pcax);
         
         % Methods
@@ -137,7 +137,7 @@ classdef PCAResult < DataItem
             groupings = uint32(groupings);
         end
 
-        function ax = plot(self, kwargs)
+        function [ax, f] = plot(self, kwargs)
             %PLOT Default plotting function of PCAResult
 
             arguments
@@ -153,11 +153,14 @@ classdef PCAResult < DataItem
             ax = [];
 
             pcax = kwargs.PCs;
-            self.scoresscatter(pcax, Axes=kwargs.Axes, ErrorEllipse=kwargs.ErrorEllipse, CenteredAxes=kwargs.CenteredAxes, color_order=kwargs.color_order);
+            options = unpack(kwargs);
+
+            % Call scatter function by default
+            [ax, f] = self.scoresscatter(pcax, options{:});
 
         end
 
-        function add_loadings_spectrum(self, pcax)
+        function loadings = add_loadings_spectrum(self, pcax)
             %ADD_LOADINGS_SPECTRUM Generate a loadings spectrum and add it
             %to the parent container
 
@@ -166,8 +169,8 @@ classdef PCAResult < DataItem
                 pcax uint8 = 1;
             end
             
-            specsimple = self.gen_loadings_spectrum(pcax);
-            self.append_sibling(specsimple);
+            loadings = self.gen_loadings_spectrum(pcax);
+            self.append_sibling(loadings);
         end
 
         function plot_loadings_spectrum(self, pcax)

@@ -8,21 +8,27 @@ function [x, base] = prepare_multivariate(self, options)
     arguments
         self SpecData;
         options.range double = [];
-        options.redo_normalization logical = false;
-        options.renormalization_range double = [];
+        options.normalize logical = false;
+        options.normalization_range double = [];
+    end
+
+
+    % Work on temporary copy
+    tmpdat = copy(self);
+
+    % Normalize spectrum
+    if options.normalize
+        tmpdat.normalize_spectrum(range=options.normalization_range);
     end
 
     if ~isempty(options.range)
         % Calculate PCA of a specific range
         startG = options.range(1);
         endG = options.range(2);
-
-        tmpdat = copy(self);
-        tmpdat.normalize_spectrum(range=[500 3200]);
         
         % Create a trimmed SpecData() as a copy.
         tmpdat = trim_spectrum(tmpdat, startG, endG);
-        base = tmpdat.graph;
+
 
         % --- TO DO ---
         % Strategy to deal with different graph bases
@@ -50,30 +56,30 @@ function [x, base] = prepare_multivariate(self, options)
 
         % Perform renormalization
         % Recommended after trimming
-        if options.redo_normalization
-            fprintf("Renormalizing spectra.\n");
-            tmpdat.normalize_spectrum();
-        end
+%         if options.normalize
+%             fprintf("Renormalizing spectra.\n");
+%             tmpdat.normalize_spectrum();
+%         end
         
         flatdata = horzcat(tmpdat.FlatDataArray);
-        
-        % Free up memory
-        delete(tmpdat);
-        clear tmpdat
+        base = tmpdat.graph;
         
     else
         % Use the full range
         
-        flatdata = horzcat(self.FlatDataArray);
+        flatdata = horzcat(tmpdat.FlatDataArray);
         base = self.graph;
         
     end
 
-
     
     % Remove NaN-Spectra
     flatdata( :, all(isnan(flatdata))) = [];
-    
+
     x = transpose(flatdata);
+
+    % Free up memory
+    delete(tmpdat);
+    clear tmpdat
 end
 

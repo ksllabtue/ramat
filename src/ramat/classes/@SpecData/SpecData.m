@@ -111,7 +111,7 @@ classdef SpecData < SpecDataABC
                 kwargs.range double = [];
             end
 
-            fprintf("Normalizing " + num2str(numel(self)) + " spectra.\n");
+            fprintf("Normalizing " + num2str(numel(self)) + " spectra, using range: " + num2str(kwargs.range) + ".\n");
             
             % Repeat operation for each spectral data object
             for s = self(:)'

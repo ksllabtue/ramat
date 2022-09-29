@@ -286,9 +286,13 @@ classdef (Abstract) SpecDataABC < DataItem
                 options.Axes = [];
                 options.min_prominence = 0.1;
                 options.negative_peaks = false;
+                options.min_height = -Inf;
             end
 
-            peaktable = self.gen_peak_table(min_prominence=options.min_prominence, negative_peaks=options.negative_peaks);
+            peaktable = self.gen_peak_table( ...
+                min_prominence = options.min_prominence, ...
+                min_height = options.min_height, ...
+                negative_peaks = options.negative_peaks);
 
             if isempty(peaktable)
                 warning("No peak table was extracted.");

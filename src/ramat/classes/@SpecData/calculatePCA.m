@@ -12,10 +12,17 @@ function pcaresult = calculatePCA(self, options)
         options.range double = [];
         options.algorithm string = "svd";
         options.invert_pcs = false;         % Invert all scores with respect to pc1
+        options.normalize logical = false;
+        options.normalization_range double = [];
     end
+
+    fprintf("Calculating PCA using " + options.algorithm + " algorithm.\n");
        
     % Prepare data
-    [x, graph_base] = self.prepare_multivariate(range=options.range);
+    [x, graph_base] = self.prepare_multivariate( ...
+        range=options.range, ...
+        normalize=options.normalize, ...
+        normalization_range=options.normalization_range);
 
     % Choose inversion, svd-nsc is just svd with inverted pcs (to
     % approximate the NIPALS algorithm sign convention).

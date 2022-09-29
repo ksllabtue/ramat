@@ -152,8 +152,19 @@ classdef Project < handle
 
             arguments
                 self Project;
-                newresult AnalysisResultContainer;
+                newresult {mustBeA(newresult,["AnalysisResultContainer", "PCAResult", "TSNEResult"])} = AnalysisResultContainer.empty();
                 group Group = Group.empty();
+            end
+
+            % Check
+            if isempty(newresult), return; end
+
+            % If not in a container yet, pack into container.
+            if ~isa(newresult,"AnalysisResultContainer")
+                container = AnalysisResultContainer(self);
+                container.append_child(newresult);
+                container.name = newresult.name;
+                newresult = container;
             end
 
             % Set target group
@@ -161,7 +172,7 @@ classdef Project < handle
                 group = self.analysis_result_root;
             end
             
-            % Append analysis result
+            % Append analysis result container to group
             group.add_children(newresult);
 
         end

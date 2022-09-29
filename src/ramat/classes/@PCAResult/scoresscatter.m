@@ -1,4 +1,4 @@
-function scoresscatter(pcaresult, pcax, options)
+function [ax, f] = scoresscatter(pcaresult, pcax, options)
 %SCORESSCATTER
 %   Draw a scatter plot of the scores of the PCA Data along 2 principal
 %   components (2D PCA)
@@ -8,10 +8,13 @@ function scoresscatter(pcaresult, pcax, options)
     arguments
         pcaresult PCAResult;
         pcax uint8 = [1 2];
+        options.?PlotOptions;
         options.Axes = []; % Handle to Axes, if empty a new figure will be created
         options.ErrorEllipse logical = false;
         options.CenteredAxes logical = true;
         options.color_order = [];
+        options.symbols = ["o", "square", "^", "v", "diamond"];
+        options.use_symbols = false;
     end
 
     if isempty(pcaresult.source_data)
@@ -81,6 +84,20 @@ function scoresscatter(pcaresult, pcax, options)
             45, ...                                 % size
             color, ...                              % color
             'filled');                              % marker type
+
+        % Use symbols instead of just colored dots?
+        if options.use_symbols
+            marker_symbol = options.symbols(mod(i - 1, numel(options.symbols) ) + 1);
+            s(i).Marker = marker_symbol;
+
+            % Do we have more groups than symbols? Let's invert the colors
+            if i > numel(options.symbols)
+                s(i).MarkerFaceColor = "none";
+                s(i).MarkerEdgeColor = "flat";
+                s(i).LineWidth = 1.5;
+                s(i).SizeData = 30;
+            end
+        end
 
         % Format Tooltips
         s(i).DataTipTemplate.DataTipRows(1).Label = sprintf("PC %d: ",pcax(1));

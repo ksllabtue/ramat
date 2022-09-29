@@ -4,6 +4,7 @@ function peak_table = gen_peak_table(self, options)
     arguments
         self {mustBeA(self, "SpecDataABC")};
         options.min_prominence double = 0.1;
+        options.min_height double = -Inf;       % Minimum height, default: -Inf = no minimum
         options.negative_peaks logical = false; % Negative peaks below zero
         options.inverted_peaks logical = false; % Inverted peaks (valleys)
     end
@@ -35,9 +36,10 @@ function peak_table = gen_peak_table(self, options)
 
     % Calculate absolute prominence
     abs_min_prominence = options.min_prominence * range;
+    abs_min_height = options.min_height * range;
 
     % Find peaks
-    [y, x] = findpeaks(ydata, xdata, MinPeakProminence=abs_min_prominence);
+    [y, x] = findpeaks(ydata, xdata, MinPeakProminence=abs_min_prominence, MinPeakHeight=abs_min_height);
 
     % Are inverted peaks (valleys) allowed?
     if ~options.inverted_peaks, x(y<0) = []; y(y<0) = []; end
@@ -48,7 +50,7 @@ function peak_table = gen_peak_table(self, options)
 
     % Do negative peaks?
     if options.negative_peaks
-        [y, x] = findpeaks(-ydata, xdata, MinPeakProminence=abs_min_prominence);
+        [y, x] = findpeaks(-ydata, xdata, MinPeakProminence=abs_min_prominence, MinPeakHeight=abs_min_height);
 
         % Are inverted peaks (valleys) allowed?
         if ~options.inverted_peaks, x(y<0) = []; y(y<0) = []; end
