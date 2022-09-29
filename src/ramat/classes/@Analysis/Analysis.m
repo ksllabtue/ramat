@@ -12,6 +12,8 @@ classdef Analysis < handle
     properties (Access = public, Dependent)
         display_name;
         DataSet; % Set of all DataContainers
+        samples; % Set of all samples or replicates
+        unique_samples;
     end
 
     methods
@@ -160,6 +162,20 @@ classdef Analysis < handle
             end
             
         end
+
+        function samples = get.samples(self)
+            %SAMPLES Gets list of samples
+
+            samples = categorical(vertcat(self.DataSet.sample));
+
+            % Remove empty sample names
+            samples(isundefined(samples)) = [];
+        end
+
+        function samples = get.unique_samples(self)
+
+            samples = unique(self.samples);
+        end
         
         function plot(self, options)
             %PLOT
@@ -178,6 +194,7 @@ classdef Analysis < handle
         end
 
         function gen_specplot(self, options)
+
 
         end
         
@@ -279,6 +296,15 @@ classdef Analysis < handle
 
         end
             
+    end
+
+    methods (Static)
+        function idx = get_unique_indices(samples)
+            % Return unique indices of samples
+
+            [~, ~, idx] = unique(samples);
+        end
+
     end
 end
 

@@ -91,6 +91,8 @@ classdef AnalysisGroup < handle
                 options.specdata logical = false;
                 options.accumsize logical = false;
                 options.ignore_empty_groups logical = true;
+                options.sample_names logical = true;
+                options.group_names logical = true;
             end
             
             s = struct();
@@ -121,6 +123,18 @@ classdef AnalysisGroup < handle
                     continue;
                 end
 
+                %% Include Verbose Information
+                % Include (verbose and repeated) group names
+                if options.group_names
+                    s(i).group_names = repmat(group.display_name,[numel(s(i).children), 1]);
+                end
+
+                % Include sample / replicate names
+                if options.sample_names
+                    s(i).sample_names = vertcat(s(i).children.sample);
+                end
+
+                %% Include Links
                 % Get children link targets: datacontainers
                 s(i).children = vertcat(s(i).children.target);
                 if isempty(s(i).children), continue; end
@@ -136,6 +150,7 @@ classdef AnalysisGroup < handle
                     s(i).accumsize = sum([s(i).specdata.DataSize]);
                 end
 
+                
                 % Move to next iteration in struct
                 i = i + 1;
 
