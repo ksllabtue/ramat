@@ -141,6 +141,16 @@ classdef Analysis < handle
             end
             
         end
+
+        function auto_assign_samples(self)
+            %AUTO_ASSIGN_SAMPLES Automatically assign samples based on the
+            %parent group in the project.
+
+            for link = self.DataSet(:)'
+                link.assign_sample(link.target.parent.display_name);
+            end
+            
+        end
         
         function dataset = get.DataSet(self)
             %DATASET Ungrouped list of datacontainers of this analysis
@@ -173,8 +183,11 @@ classdef Analysis < handle
         end
 
         function samples = get.unique_samples(self)
-
             samples = unique(self.samples);
+        end
+
+        function sample_indices = get_unique_sample_indices(self)
+            sample_indices = Analysis.get_unique_indices(self.samples);
         end
         
         function plot(self, options)
@@ -254,7 +267,6 @@ classdef Analysis < handle
             arguments
                 self Analysis;
                 options.selection logical = false;
-                options.custom_selection DataContainer = DataContainer.empty;
                 options.specdata logical = false;
                 options.accumsize logical = false;
             end

@@ -87,7 +87,6 @@ classdef AnalysisGroup < handle
             arguments
                 self AnalysisGroup;
                 options.selection logical = false;
-                options.custom_selection DataContainer = DataContainer.empty;
                 options.specdata logical = false;
                 options.accumsize logical = false;
                 options.ignore_empty_groups logical = true;
@@ -104,24 +103,22 @@ classdef AnalysisGroup < handle
             i = 1;
             for group = self(:)'
 
-                s(i).name = group.display_name;
-
-                % Filter selection only
-                if options.selection
-                    s(i).children = intersect(group.children, group.parent.Selection);
-                elseif ~isempty(options.custom_selection)
-                    s(i).children = intersect(group.children, options.custom_selection);
-                else
-                    s(i).children = group.children;
-                end
-
+                % Get links
+                links = group.children;
+                
+                % Filter selected links only
+                if options.selection, links = links([links.selected] == true); end
+                
                 % Check after selection, do we still have any data left for
                 % this group?
-                if (isempty(s(i).children) && options.ignore_empty_groups)
-                    % Remove empty groups from struct
-                    % This is highly recommended for PCA!!!
+                if (isempty(links) && options.ignore_empty_groups)
+                    % Ignoring empty groups from struct is highly recommended for PCA
                     continue;
                 end
+
+                % Add group name and links to struct
+                s(i).name = group.display_name;
+                s(i).children = links;
 
                 %% Include Verbose Information
                 % Include (verbose and repeated) group names
@@ -149,7 +146,6 @@ classdef AnalysisGroup < handle
                 if (options.specdata && options.accumsize)
                     s(i).accumsize = sum([s(i).specdata.DataSize]);
                 end
-
                 
                 % Move to next iteration in struct
                 i = i + 1;

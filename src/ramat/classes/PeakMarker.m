@@ -10,7 +10,7 @@ classdef PeakMarker < handle
         parent;
         precision = 0;
         yshift = 0;
-        fontsize = 11;
+        fontsize = 14;
     end
 
     properties (Access=private)

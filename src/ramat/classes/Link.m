@@ -14,6 +14,7 @@ classdef Link < handle & matlab.mixin.indexing.RedefinesDot & matlab.mixin.Copya
 
     properties (Dependent)
         display_name string;
+        icon;
     end
 
     % Cached properties, in case target gets deleted.
@@ -93,6 +94,16 @@ classdef Link < handle & matlab.mixin.indexing.RedefinesDot & matlab.mixin.Copya
 
         end
 
+        function icon = get.icon(self)
+
+            if self.selected
+                icon = self.target.icon;
+            else
+                icon = "cross-12.png";
+            end
+
+        end
+
         function descname = get_descriptive_name(self)
             %GET_DESCRIPTIVE_NAME Constructs descriptive name including
             %sample name
@@ -119,8 +130,8 @@ classdef Link < handle & matlab.mixin.indexing.RedefinesDot & matlab.mixin.Copya
             sample_name = "(" + sample_name + ")";
         end
 
-        function unselect(self)
-            %UNSELECT Unselect links
+        function deselect(self)
+            %DESELECT Unselect links
             [self.selected] = deal(false);
         end
 
@@ -220,10 +231,23 @@ classdef Link < handle & matlab.mixin.indexing.RedefinesDot & matlab.mixin.Copya
                     Text = string(sampl), ...
                     Callback = @(~,~) assign_to_sample(selection, selected_nodes, string(sampl), false));
             end
+
+            uimenu(cm, Text = "Select", MenuSelectedFcn={@select, selection, selected_nodes});
+            uimenu(cm, Text = "Deselect", MenuSelectedFcn={@deselect, selection, selected_nodes});
             
             uimenu(cm, Text = "Move up", MenuSelectedFcn={@moveup, selection, node});
             uimenu(cm, Text = "Move down", MenuSelectedFcn={@movedown, selection, node});
             uimenu(cm, Text = "Remove", MenuSelectedFcn = {@remove, selection, node});
+
+            function select(~,~,self,node)
+                self.select();
+                update_node(node, "icon");
+            end
+
+            function deselect(~,~,self,node)
+                self.deselect();
+                update_node(node, "icon");
+            end
 
             function moveup(~,~,self,node)
                 self.moveup();

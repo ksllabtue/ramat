@@ -41,6 +41,11 @@ function update_node(node, action)
         case "remove"
             delete(node);
 
+        case "icon"
+            for n = node(:)'
+                n.Icon = n.NodeData.icon;
+            end
+
         case "descriptive_name"
             for n = node(:)'
                 n.Text = n.NodeData.get_descriptive_name();
