@@ -11,7 +11,10 @@ function update_analysis_mgr_tree(app, analysis)
         analysis Analysis = Analysis.empty;
     end
     
-    tree = app.SubsetItemsTree;
+    tree = app.AnalysisMgrTree;
+
+    % Make sure we can select multiple links
+    tree.Multiselect = "on";
 
     % Make sure tree has a single persisting context menu
     % And assign callback for dynamic updating of the context menu
@@ -51,7 +54,7 @@ function update_analysis_mgr_tree(app, analysis)
         for link = group.children(:)'
 
             datanode = uitreenode(groupnode, ...
-                "Text", link.display_name, ...
+                "Text", link.get_descriptive_name(), ...
                 "NodeData", link, ...
                 "ContextMenu", cm);
 
@@ -69,7 +72,7 @@ function update_analysis_mgr_tree(app, analysis)
     end
 
     % Set Checked nodes based on Analysis.Selection
-    tree.CheckedNodes = checkednodes;
+%     tree.CheckedNodes = checkednodes;
 
 
 end

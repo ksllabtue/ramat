@@ -75,7 +75,7 @@ function ax = plot(self, options)
     
             % Use fancy peak markers?
             if options.fancy_peak_markers
-                pm = PeakMarker(ax, peak.x, peak.y, peak.neg, fontsize=11);
+                pm = PeakMarker(ax, peak.x, peak.y, peak.neg, fontsize=13);
 
                 pm.fix_shift(-yshift * ti);
                 continue;

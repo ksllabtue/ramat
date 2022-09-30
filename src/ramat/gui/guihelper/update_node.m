@@ -7,7 +7,7 @@ function update_node(node, action)
     end
 
     % Find parent tree
-    tree = node;
+    tree = node(1);
     lim = 20; i = 0;
     while ~(class(tree) == "matlab.ui.container.CheckBoxTree" || class(tree) == "matlab.ui.container.Tree")
         tree = tree.Parent;
@@ -18,7 +18,7 @@ function update_node(node, action)
     switch action
         case "moveup"
             % Cannot move up from 1st place
-            idx = get_idx();
+            idx = get_idx(node);
             if idx == 1, return; end
 
             % Move by swapping with previous sibling
@@ -29,7 +29,7 @@ function update_node(node, action)
 
         case "movedown"
             % Cannot move down from last place
-            idx = get_idx();
+            idx = get_idx(node);
             if idx == numel(node.Parent.Children), return; end
 
             % Move by swapping with previous sibling
@@ -41,9 +41,19 @@ function update_node(node, action)
         case "remove"
             delete(node);
 
+        case "icon"
+            for n = node(:)'
+                n.Icon = n.NodeData.icon;
+            end
+
+        case "descriptive_name"
+            for n = node(:)'
+                n.Text = n.NodeData.get_descriptive_name();
+            end
+
     end
 
-    function idx = get_idx()
+    function idx = get_idx(node)
         idx = find(node == node.Parent.Children);
     end
 end

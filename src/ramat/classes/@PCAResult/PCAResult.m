@@ -25,6 +25,11 @@ classdef PCAResult < DataItem
         dataType = "PCA";
     end
 
+    % List of exportable formats
+    properties (SetAccess = private, GetAccess = private)
+        format_list = ["csv";"mat";"xlsx"];
+    end
+
     properties (SetAccess=private)
         Type = "PCA";
     end
@@ -33,9 +38,11 @@ classdef PCAResult < DataItem
         NumGroups;
         NumDataPoints;
         Range;
+        scores_table;
 
         % Source reference
-        source_grouping uint32;
+        source_group_indices uint32;
+        source_sample_indices uint32;
     end
     
     methods
@@ -64,6 +71,8 @@ classdef PCAResult < DataItem
         
         % Method Signatures
         [ax, f] = scoresscatter(self, pcax);
+        [ax, f] = plot_score_stats(self, pc);
+        [t, sc] = get_scores_summary(self);
         plotLoadings(self, pcax);
         
         % Methods
@@ -126,15 +135,40 @@ classdef PCAResult < DataItem
             range = [min(self.CoefsBase), max(self.CoefsBase)];
         end
 
-        function groupings = get.source_grouping(self)
+        function group_indices = get.source_group_indices(self)
             %SOURCE_GROUPING This should be faster, TODO
+            [~, ~, group_indices] = unique(vertcat(self.source_data.group_names), "stable");
+        end
+
+        function sample_indices = get.source_sample_indices(self)
+            [~, ~, sample_indices] = unique(vertcat(self.source_data.sample_names), "stable");
+        end
+
+        function t = get.scores_table(self)
+            %GET_SCORES_SUMMARY Summarize scores in tabular format
+        
+            % PC labels
+            pclabels = "PC-" + string(1:size(self.Score,2));
+        
+            % Convert scores to table
+            scores = array2table(self.Score, VariableNames=pclabels);
+        
+            % Get spectrum, group, and sample names
+            spectra = vertcat(self.source_data.specdata);
+            spectra_names = vertcat(spectra.name);
+        
+            group_indices = self.source_group_indices;
+            group_names = vertcat(self.source_data.group_names);
+        
+            sample_indices = self.source_sample_indices;
+            sample_names = vertcat(self.source_data.sample_names);
             
-            groupings = [];
-            for i = 1:numel(self.source_data)
-                groupsize = self.source_data(i).accumsize;
-                groupings = [groupings; repmat(i, [groupsize, 1])];
-            end
-            groupings = uint32(groupings);
+            labels = table(spectra_names, group_indices, group_names, sample_indices, sample_names, ...
+                VariableNames=["spec_name", "group_index", "group_name", "sample_index", "sample_name"]);
+        
+            % Horzcat tables
+            t = [labels, scores];
+        
         end
 
         function [ax, f] = plot(self, kwargs)
@@ -209,8 +243,131 @@ classdef PCAResult < DataItem
             specsimple.legend_entries = "PC" + string(pcax(:));
 
         end
+
+        function add_context_actions(self, cm, node, app)
+            %ADD_CONTEXT_ACTIONS Retrieve all (possible) actions for this
+            %data item that should be displayed in the context menu
+            %   This function adds menu items to the context menu, which
+            %   link to specific context actions for this data item.
+            %
+            arguments
+                self;
+                cm matlab.ui.container.ContextMenu;
+                node matlab.ui.container.TreeNode;
+                app ramatguiapp;
+            end
+
+            % Add parent actions of DataItem
+            add_context_actions@DataItem(self, cm, node, app);
+
+            % Add specific context actions for PCAResult
+            menu_item = uimenu(cm, Text="Export Scores ...");
+
+            uimenu(menu_item, Text="All scores", MenuSelectedFcn=@(~,~) self.export_scores());
+            uimenu(menu_item, Text="All scores (averaged per sample/replicate)", MenuSelectedFcn=@(~,~) self.export_scores(per_sample=true));
+            uimenu(menu_item, Text="Scores to GraphPad Prism", MenuSelectedFcn= @(~,~) self.export_scores(optimized_for_prism=true, ask_pc=true));
+            uimenu(menu_item, Text="Scores to GraphPad Prism (averaged per sample/replicate)", MenuSelectedFcn= @(~,~) self.export_scores(optimized_for_prism=true, per_sample=true, ask_pc=true));
+
+            menu_item = uimenu(cm, Text="Print Scores ...");
+            
+            uimenu(menu_item, Text="All scores", MenuSelectedFcn=@(~,~) print_scores(self));
+            uimenu(menu_item, Text="All scores (averaged per sample/replicate)", MenuSelectedFcn=@(~,~) print_scores(self, per_sample=true));
+            uimenu(menu_item, Text="Scores to GraphPad Prism", MenuSelectedFcn= @(~,~) print_scores(self, optimized_for_prism=true, ask_pc=true));
+            uimenu(menu_item, Text="Scores to GraphPad Prism (averaged per sample/replicate)", MenuSelectedFcn= @(~,~) print_scores(self, optimized_for_prism=true, per_sample=true, ask_pc=true));
+
+            uimenu(cm, Text="Export ...", MenuSelectedFcn=@(~,~) ExportOptionsDialog(self));
+
+            function print_scores(self, varargin)
+                table = self.get_scores_summary(varargin{:});
+                dump_selection(table);
+            end
+
+            function preview(~, ~, self, opts)
+                self.preview_peak_table(min_prominence=opts.min_prom, negative_peaks=opts.neg_peaks);
+            end
+
+            function extract(~, ~, self, app, opts)
+                self.add_peak_table(min_prominence=opts.min_prom, negative_peaks=opts.neg_peaks);
+                update_data_items_tree(app, self.parent_container);
+            end
+
+        end
+
+        function export_scores(self, options)
+            %EXPORT Exports numerical data of specdata to specificied
+            %output format
+
+            arguments
+                self;
+                options.path string = "";
+                options.format string = "";
+                options.format_list string = self.format_list;
+                options.pc int16 = 1;
+                options.per_sample = false;
+                options.ask_pc = false;
+                options.optimized_for_prism = false;
+            end
+
+            % Prepare data
+            export_table = self.get_scores_summary(pc=options.pc, optimized_for_prism=options.optimized_for_prism, per_sample=options.per_sample, ask_pc=options.ask_pc);
+
+            % Ask for path
+            if options.path == ""
+                [file, path] = self(1).export_ui_dialog(format=options.format, format_list=self(1).format_list);
+                options.path = fullfile(path, file);
+            end
+
+            % Make sure the entire file gets overwritten
+            write_mode = "overwrite";
+            if options.format == "xlsx", write_mode = "overwritesheet"; end
+
+            % Write to file
+            fprintf("\nWriting to file...\n");
+            writetable(export_table, options.path, WriteMode=write_mode);
+            fprintf("Finished.\n");
+            
+        end
+
+        function format_list = get_export_formats(self)
+            %GET_EXPORT_FORMATS Returns list of exportable formats.
+            format_list = self.format_list;
+        end
             
         
+    end
+
+    methods (Static)
+        function wide_table = tall_to_wide(scores_tbl)
+            %TALL_TO_WIDE Summary of this function goes here
+            %   Detailed explanation goes here
+        
+            arguments
+                scores_tbl table;
+            end
+        
+            number_of_groups = max(scores_tbl.group_index);
+            number_of_samples = max(scores_tbl.sample_index);
+            unique_group_indices = int32(unique(scores_tbl.group_index, "stable"));
+            unique_group_names = string(unique(scores_tbl.group_name, "stable"));
+        
+            % Where is the scores data
+            column = string(scores_tbl.Properties.VariableNames(end));
+        
+            % Preallocate array
+            wide_table = nan(number_of_samples, number_of_groups);
+        
+            for group = unique_group_indices(:)'
+                group_average_scores = scores_tbl.(column)(scores_tbl.group_index == group);
+                wide_table(1:size(group_average_scores,1), group) = group_average_scores;
+            end
+
+            % Remove extra allocated nans
+            wide_table(all(isnan(wide_table),2),:) = [];
+
+            % Create table
+            wide_table = array2table(wide_table, VariableNames=unique_group_names);
+
+        end
     end
 end
 

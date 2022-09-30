@@ -8,10 +8,13 @@ classdef Link < handle & matlab.mixin.indexing.RedefinesDot & matlab.mixin.Copya
         target DataContainer = DataContainer.empty;
         parent AnalysisGroup = AnalysisGroup.empty;
         name string;
+        selected logical = true;
+        sample = "";
     end
 
     properties (Dependent)
         display_name string;
+        icon;
     end
 
     % Cached properties, in case target gets deleted.
@@ -61,7 +64,22 @@ classdef Link < handle & matlab.mixin.indexing.RedefinesDot & matlab.mixin.Copya
     end
 
     methods
+        function assign_sample(self, sample, options)
+            %ASSIGN_SAMPLE
+
+            arguments
+                self Link;
+                sample string;
+                options.askinput logical = false;
+            end
+
+            if options.askinput, sample = Link.askinput(); end
+
+            [self.sample] = deal(sample);
+        end
+
         function displayname = get.display_name(self)
+            %DISPLAY_NAME Constructs display name
 
             if isempty(self.target), self.get_deleted_name(); return; end
             if ~isvalid(self.target), self.get_deleted_name(); return; end
@@ -73,13 +91,53 @@ classdef Link < handle & matlab.mixin.indexing.RedefinesDot & matlab.mixin.Copya
 
             displayname = self.target.display_name;
             self.cached_display_name = self.target.display_name;
-            
+
+        end
+
+        function icon = get.icon(self)
+
+            if self.selected
+                icon = self.target.icon;
+            else
+                icon = "cross-12.png";
+            end
+
+        end
+
+        function descname = get_descriptive_name(self)
+            %GET_DESCRIPTIVE_NAME Constructs descriptive name including
+            %sample name
+
+            descname = self.get_sample_display_name + " " + self.display_name;
         end
 
         function displayname = get_deleted_name(self)
 
             displayname = "(DELETED) " + self.cached_display_name;
             
+        end
+
+        function sample_name = get_sample_display_name(self)
+            %GET_SAMPLE_DISPLAY_NAME
+            
+            sample_name = self.sample;
+
+            if sample_name == ""
+                sample_name = "unnamed";
+            end
+
+            % Enclose
+            sample_name = "(" + sample_name + ")";
+        end
+
+        function deselect(self)
+            %DESELECT Unselect links
+            [self.selected] = deal(false);
+        end
+
+        function select(self)
+            %SELECT Select links
+            [self.selected] = deal(true);
         end
 
         function idx = get.idx(self)
@@ -142,6 +200,11 @@ classdef Link < handle & matlab.mixin.indexing.RedefinesDot & matlab.mixin.Copya
             analysis = self.parent.parent;
             if isempty(analysis), return; end
 
+            % Get Selection
+            selection = vertcat(app.AnalysisMgrTree.SelectedNodes.NodeData);
+            selected_nodes = vertcat(app.AnalysisMgrTree.SelectedNodes);
+
+            % Create menu for group assignment
             uimenu(cm, ...
                 'Text', 'Assign to New Group', ...
                 'Callback', {@assign_to, self, analysis, [], app});
@@ -150,14 +213,41 @@ classdef Link < handle & matlab.mixin.indexing.RedefinesDot & matlab.mixin.Copya
                 % The active analysis subset has groups
                 mh = uimenu(cm, 'Text', 'Assign to ...');
                 
+                % Create menus for every group in the analysis
                 for group = analysis.GroupSet(:)'
-                    uimenu(mh, 'Text', group.display_name, 'Callback', {@assign_to, self, analysis, group, app}); 
+                    uimenu(mh, 'Text', group.display_name, 'Callback', {@assign_to, selection, analysis, group, app}); 
                 end
             end
 
-            uimenu(cm, Text = "Move up", MenuSelectedFcn={@moveup, self, node});
-            uimenu(cm, Text = "Move down", MenuSelectedFcn={@movedown, self, node});
-            uimenu(cm, Text = "Remove", MenuSelectedFcn = {@remove, self, node});
+            % Create menu for sample assignment
+            mh = uimenu(cm, Text="Assign sample/replicate ...");
+
+            % To new sample
+            uimenu(mh, Text="<New Sample/Replicate>", Callback = @(~,~) assign_to_sample(selection, selected_nodes, "", true));
+
+            % To existing samples
+            for sampl = analysis.unique_samples(:)'
+                uimenu(mh, ...
+                    Text = string(sampl), ...
+                    Callback = @(~,~) assign_to_sample(selection, selected_nodes, string(sampl), false));
+            end
+
+            uimenu(cm, Text = "Select", MenuSelectedFcn={@select, selection, selected_nodes});
+            uimenu(cm, Text = "Deselect", MenuSelectedFcn={@deselect, selection, selected_nodes});
+            
+            uimenu(cm, Text = "Move up", MenuSelectedFcn={@moveup, selection, node});
+            uimenu(cm, Text = "Move down", MenuSelectedFcn={@movedown, selection, node});
+            uimenu(cm, Text = "Remove", MenuSelectedFcn = {@remove, selection, node});
+
+            function select(~,~,self,node)
+                self.select();
+                update_node(node, "icon");
+            end
+
+            function deselect(~,~,self,node)
+                self.deselect();
+                update_node(node, "icon");
+            end
 
             function moveup(~,~,self,node)
                 self.moveup();
@@ -188,6 +278,30 @@ classdef Link < handle & matlab.mixin.indexing.RedefinesDot & matlab.mixin.Copya
                 app.updatemgr(Parts=3);
             end
 
+            function assign_to_sample(self, node, newsample, askinput)
+                % Ask for user input
+                if askinput, newsample = Link.askinput(); end
+
+                % Assign
+                self.assign_sample(newsample);
+
+                % Update nodes in GUI
+                update_node(node, "descriptive_name");
+            end
+
+        end
+    end
+
+    methods (Static)
+        function samplename = askinput()
+            %Ask prompt
+            prompt = {'Enter name of the sample or replicate:'};
+            dlgtitle = 'Add sample / replicate';
+            dims = [1 70];
+            definput = {''};
+            answer = inputdlg(prompt,dlgtitle,dims,definput);
+
+            samplename = string(answer{1});
         end
     end
 end
