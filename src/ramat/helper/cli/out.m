@@ -10,6 +10,7 @@ function out(str, opts)
     if isempty(opts.gui)
         % Write to command line
         fprintf(str);
+        fprintf("\n");
         return;
 
     end

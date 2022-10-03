@@ -20,13 +20,17 @@ if all(strcmp(ext, ext{1}))
     
     switch uniformExt
         case '.wip'
-            fileTypeMode = 0;
+            fileTypeMode = "wip";
         case '.mat'
-            fileTypeMode = 1;
+            fileTypeMode = "mat";
         case '.asc'
-            fileTypeMode = 2;
+            fileTypeMode = "txt";
         case '.txt'
-            fileTypeMode = 3;
+            fileTypeMode = "txt";
+        case '.xls'
+            fileTypeMode = "xls";
+        case '.xlsx'
+            fileTypeMode = "xls";
         otherwise
             throw(MException('Ramat:IO', 'File Extension not Supported'));
     end

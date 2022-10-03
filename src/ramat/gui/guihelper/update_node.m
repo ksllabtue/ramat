@@ -38,6 +38,9 @@ function update_node(node, action)
 
             tree.SelectedNodes = node;
 
+        case "create"
+            
+
         case "remove"
             delete(node);
 

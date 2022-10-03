@@ -82,7 +82,7 @@ classdef Group < handle
 
             arguments
                 self Group;
-                name string;
+                name string = "New Group";
             end
 
             group = Group(self, name);
@@ -145,16 +145,18 @@ classdef Group < handle
             end
         end
         
-        function remove(self)
+        function remove(selfs)
             %REMOVE Soft Destructor
             
-            % Do not remove root groups
-            if class(self.parent.parent) == "Project", return; end
-
-            if ~isempty(self.child_groups), self.child_groups.remove(); end
-            if ~isempty(self.children), self.children.remove(); end
-            self.parent.child_groups(self.parent.child_groups == self) = [];
-            self.delete();
+            for self = selfs(:)'
+                % Do not remove root groups
+                if class(self.parent.parent) == "Project", return; end
+    
+                if ~isempty(self.child_groups), self.child_groups.remove(); end
+                if ~isempty(self.children), self.children.remove(); end
+                self.parent.child_groups(self.parent.child_groups == self) = [];
+                self.delete();
+            end
 
         end
 
@@ -171,11 +173,44 @@ classdef Group < handle
                 app ramatguiapp;
             end
 
+            selection = vertcat(app.DataMgrTree.SelectedNodes.NodeData);
+
+            % Add "add to analysis set" menu nodes
+            node_add_to = uimenu(cm, 'Text', 'Add to Analysis Set ...');
+            uimenu(node_add_to, ...
+                'Text', '<New Analysis>', ...
+                'Callback', @(~,~) add_to_analysis(app, selection, Analysis.empty));
+
+            % Populate sub menu with all available analysis sets
+            for analysis = app.prj.analyses(:)'
+                name = analysis.display_name;
+                uimenu(node_add_to, ...
+                    'Text', name, ...       % Name of analysis subset
+                    'Callback', @(~,~) add_to_analysis(app, selection, analysis)); 
+            end
+
+            % Create new group
+            uimenu(cm, Text="Create new group", Callback=@(~,~) add_group(self, node, app))
+
             % Dump to workspace
             uimenu(cm, Text="Dump to Workspace", Callback={@DumptoWorkspaceSelected, app})
 
             % Remove
             uimenu(cm, Text="Remove", MenuSelectedFcn={@remove, self, node});
+
+            % Nested functions
+            function add_to_analysis(app, selection, analysis)
+                % User has selected <ADD TO ANALYSIS>           
+                selection.add_to_analysis(analysis);
+                
+                % Update GUI Managers
+                app.updatemgr(Parts=[2, 3]);
+            end
+
+            function add_group(self, node, app)
+                new_group = self.add_child_group();
+                gen_child_nodes(node, new_group, app);
+            end
 
             function remove(~, ~, self, node)
                 self.remove();
@@ -187,6 +222,35 @@ classdef Group < handle
                 dump_selection(app.selected_datacontainers);
             end
 
+        end
+
+        function analysis = add_to_analysis(self, analysis)
+            
+            arguments
+                self Group;
+                analysis Analysis = Analysis.empty();
+            end
+
+            prj = self(1).parent_project;
+
+            if isempty(analysis)
+                analysis = prj.add_analysis();
+            end
+
+            analysis.append_data(self);
+
+        end
+
+        function dataset = get_all_data(self)
+
+            dataset = DataContainer.empty();
+
+            for group = self.child_groups(:)'
+                all_child_data = group.get_all_data();
+                dataset = [dataset(:); all_child_data(:)];
+            end
+
+            dataset = [dataset(:); self.children];
         end
         
         function t = table(self)

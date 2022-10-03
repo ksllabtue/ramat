@@ -18,7 +18,7 @@ classdef Project < handle
 
     properties
         DataSet = DataContainer.empty;
-        GroupSet = Group.empty;
+        GroupSet Group = Group.empty;
         ActiveAnalysis = Analysis.empty;
         ActiveAnalysisResult = AnalysisResult.empty;
     end
@@ -59,7 +59,7 @@ classdef Project < handle
             
         end
 
-        function append_data(self, dataset, group)
+        function append_data(self, dataset, group, options)
             %APPEND_DATA:
             %   Appends a dataset (set of DataContainer) to the project,
             %   e.g after importing data
@@ -69,10 +69,16 @@ classdef Project < handle
                 self Project;
                 dataset DataContainer;
                 group = Group.empty();
+                options.auto_group logical = true;
             end
 
             % Assign parent project
             [dataset.parent_project] = deal(self);
+
+            % Append data
+            self.DataSet = [self.DataSet(:); dataset(:)];
+
+            if ~options.auto_group, return; end
            
             % Create a new group for the newly appended data if group does
             % not exist or is empty
@@ -84,7 +90,22 @@ classdef Project < handle
             % Add children to this group
             group.add_children(dataset);
 
-            self.DataSet = [self.DataSet; dataset];
+        end
+
+        function append_project(self, other_project)
+            %APPEND_PROJECT Appends other project to current project (self)
+
+            arguments
+                self Project;
+                other_project Project;
+            end
+
+            % Append groups from other project
+            self.append_groups(other_project.GroupSet);
+
+            % Append data from other project
+            self.append_data(other_project.DataSet, auto_group=false);
+
         end
         
         function new_group = add_group(self, groupname, parent)
@@ -105,11 +126,35 @@ classdef Project < handle
             self.GroupSet(end + 1) = new_group;
             
         end
+
+        function append_groups(self, groups, parent)
+
+            arguments
+                self Project;
+                groups Group;
+                parent Group = Group.empty;
+            end
+
+            % Always make sure the new group is added to the root
+            if isempty(parent)
+                parent = self.data_root;
+            end
+
+            [groups.parent] = deal(parent);
+            parent.child_groups = [parent.child_groups(:); groups(:)];
+            self.GroupSet = [self.GroupSet(:); groups(:)];            
+
+        end
         
         function newAnalysisHandle = add_analysis(self, dataset)
             %ADD_ANALYSIS
             %   Add a new data subset for analysis
             %   Returns:    handle to new analysis subset
+
+            arguments
+                self Project;
+                dataset DataContainer = DataContainer.empty;
+            end
             
             newAnalysisHandle = Analysis(self, dataset);
             self.analyses = [self.analyses; newAnalysisHandle];

@@ -53,9 +53,22 @@ classdef Analysis < handle
 
             arguments
                 self Analysis;
-                dataset DataContainer;
+                dataset {mustBeA(dataset, ["Group", "DataContainer"])};
                 new_group_name string = "";
                 opts.level = 1;
+            end
+
+            if isempty(dataset), return; end
+
+            % If groups are given, distribute according to provided groups
+            if isa(dataset, "Group")
+                for group = dataset(:)'
+                    analysis_group = self.add_group(group.name);
+
+                    group_data = group.get_all_data();
+                    analysis_group.append_data(group_data);
+                end
+                return;
             end
 
             % If group name is given, use this name
@@ -68,7 +81,7 @@ classdef Analysis < handle
             % If groups are not given, infer from parent Group
             parent_groups = dataset.get_parent_groups(unique=true, level=opts.level);
 
-            for group = parent_groups
+            for group = parent_groups(:)'
                 % Create group
                 newgroup = self.add_group(group.name);
 

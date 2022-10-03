@@ -223,7 +223,8 @@ classdef (Abstract) SpecDataABC < DataItem
             % This is returned by default
             opts = unpack(options);
             data = self.get_flatdata(opts{:});
-            pos = 1:self.DataSize;
+            datasize = size(data,2);
+            pos = 1:datasize;
 
             % Check if we can actually sample from this
             if rand_num > self.DataSize
@@ -232,7 +233,7 @@ classdef (Abstract) SpecDataABC < DataItem
             end
 
             % Select random spectra.
-            pos = randperm(self.DataSize, rand_num);
+            pos = randperm(datasize, rand_num);
             data = data(:, pos);
 
         end
@@ -347,6 +348,11 @@ classdef (Abstract) SpecDataABC < DataItem
         function format_list = get_export_formats(self)
             %GET_EXPORT_FORMATS Returns list of exportable formats.
             format_list = self.format_list;
+        end
+        
+        function set.graph(self, graph)
+            % Force column notation
+            self.graph = graph(:);
         end
         
     end
