@@ -268,7 +268,7 @@ classdef DataContainer < Container
                     "Callback", {@move_to_group, app, group, Group.empty()});
 
                 % Recursion
-                for child = group.child_groups
+                for child = group.child_groups(:)'
                     gen_child_group_nodes(group_node, child, app)
                 end
 

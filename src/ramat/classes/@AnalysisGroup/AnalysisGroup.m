@@ -144,7 +144,7 @@ classdef AnalysisGroup < handle
 
                 % Get accumulated sizes
                 if (options.specdata && options.accumsize)
-                    s(i).accumsize = sum([s(i).specdata.DataSize]);
+                    s(i).accumsize = sum([s(i).specdata.get_non_nan_datasize]);
                 end
                 
                 % Move to next iteration in struct

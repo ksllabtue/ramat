@@ -54,8 +54,9 @@ function update_app_selection_changed(app, event)
 
     % Prepare for plot preview
 
-    % Ignore text data
+    % Ignore text data and empty data
     node_data(vertcat(node_data.dataType) == "TextData") = [];
+    node_data(vertcat(node_data.dataType) == "empty") = [];
     if isempty(node_data), return; end
     
     % Check if non-homogeneous data types have been selected, e.g. spectral

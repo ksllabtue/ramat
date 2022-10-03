@@ -1,9 +1,18 @@
-function out = import_single_wip(file, opts)
+function data = import_single_wip(file, opts)
     %IMPORT_SINGLE_WIP
+    %
+    %   Input:
+    %       file        path to WiTec prohct file
+    %       .gui        gui handle
+    %       .convert_widata convert WiT_IO objects to RaMAT objects. Set to
+    %       false in case the data is supposed to be previewed before
+    %       conversion.
+    %       .processing processing options
 
     arguments
         file string = string.empty();
         opts.gui = [];
+        opts.convert_widata logical = true
         opts.processing = get_processing_options;
     end
     
@@ -16,15 +25,25 @@ function out = import_single_wip(file, opts)
     enableWITIOhelper();
     
     %% Import .wip file
-    [O_wid, O_wip, ~] = wip.read(file, '-all');
-    
-    % Output to out=[]
-    f = 1;
+    [O_wid, ~, ~] = wip.read(file, '-all');
+
+    out("WIP file (WITec Data) with " + num2str(numel(O_wid)) + " WITec Data objects.", gui=opts.gui);
     
     % Default: import everything, including text data objects
-    for i = 1:size(O_wid,1)
-        out(i, 1) = import_single_widata(O_wid(i, 1), processing=opts.processing, gui=opts.gui);
+    if opts.convert_widata
+
+        data = DataContainer.empty();
+
+        for i = 1:size(O_wid,1)
+            data(i, 1) = convert_widata(O_wid(i, 1), processing=opts.processing, gui=opts.gui);
+        end
+
+        return;
     end
+
+    data = O_wid;
+
+    out("WITec data has been imported. Continue to convert the data into RaMAT data.", gui=opts.gui);
 
 end
 

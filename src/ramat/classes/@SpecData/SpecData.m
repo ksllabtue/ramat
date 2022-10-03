@@ -72,7 +72,7 @@ classdef SpecData < SpecDataABC
     end
     
     methods
-        function self = SpecData(name, graphbase, data, graphunit, dataunit)
+        function self = SpecData(name, graphbase, data, graphunit, dataunit, options)
             %SPECDATA Construct an instance of this class
             %   Stores x-data and y-data
 
@@ -80,8 +80,9 @@ classdef SpecData < SpecDataABC
                 name string = "";
                 graphbase double = [];
                 data {mustBeA(data, ["double", "single"])} = [];
-                graphunit string = "";
-                dataunit string = "";
+                graphunit string = "cm-1";
+                dataunit string = "a.u.";
+                options.dimensions int32 = [];
             end
 
             % Convert data to double
@@ -93,8 +94,10 @@ classdef SpecData < SpecDataABC
             self.name = name;
             self.graph = graphbase;
             self.graph_unit = graphunit;
-            self.data = data;
             self.data_unit = dataunit;
+
+            % Set data
+            self.set_data(data, dimensions=options.dimensions);
 
             % Create LA scan cursor
             self.cursor = Cursor(self);
@@ -258,8 +261,14 @@ classdef SpecData < SpecDataABC
 
             % Prepare output
             rownum = self(1).GraphSize;
-            colnum = sum([self.DataSize]);
-            flatdata_out = zeros(rownum, colnum, 'double');
+
+            if ~options.ignore_nan
+                % Preallocated (optimized)
+                colnum = sum([self.DataSize]);
+                flatdata_out = zeros(rownum, colnum, 'double');
+            else
+                flatdata_out = double.empty(rownum,0);
+            end
 
             % Size checks
             if ~all([self.GraphSize] == rownum)
@@ -275,18 +284,45 @@ classdef SpecData < SpecDataABC
 
                 % Process data
                 if options.zero_to_nan, dat = SpecData.zero_to_nan(dat); end
-                if options.ignore_nan, dat = SpecData.remove_nan(dat); end
 
                 % Flatten
                 flat = SpecData.flatten(dat);
+
+                % Remove nans
+                if options.ignore_nan, flat = SpecData.remove_nan(flat); end
                 numcols = size(flat,2);
                 
                 % Insert
-                flatdata_out(:,colidx:colidx+numcols-1) = flat;
-                
-                % Update column index
-                colidx = colidx + numcols;
+                if ~options.ignore_nan
+                    % Concatenate optimized
+                    flatdata_out(:,colidx:colidx+numcols-1) = flat;
+                    % Update column index
+                    colidx = colidx + numcols;
+                    continue;
+                end
+
+                % Concatenate non-optimized
+                flatdata_out = [flatdata_out; flat]; %#ok<AGROW>
             end
+
+        end
+
+        function non_nan_datasize = get_non_nan_datasize(self, options)
+
+            arguments
+                self SpecData;
+                options.zero_to_nan logical = true;
+            end
+
+            % Get spectral data
+            dat = self.data;
+
+            % Process data
+            if options.zero_to_nan, dat = SpecData.zero_to_nan(dat); end
+
+            non_nans = ~any(isnan(dat), 3);
+
+            non_nan_datasize = sum(non_nans, "all");
 
         end
 
@@ -416,20 +452,53 @@ classdef SpecData < SpecDataABC
         
         
         %% Setter
-        function set.data(self, data)
-            % Force a three-dimensional matrix
+        
+        function set_data(self, data, options)
+            %SET_DATA
+
+            arguments
+                self SpecData;
+                data = [];
+                options.dimensions int32 = [];
+            end
+
+            if isempty(data), return; end
+
+            % Can we set three-dimensional data directly?
             if numel(size(data)) == 3
                 self.data = data;
-            else
-                if isempty(self.data)
-                    xs = 1;
-                    ys = 1;
-                else
-                    xs = self.XSize;
-                    ys = self.YSize;
-                end
-                self.data = permute(reshape(data', xs, ys, self.GraphSize), [2 1 3]);
+                return;
             end
+
+            % Convert and set data
+            self.set_2d_data(data, options.dimensions);
+
+        end
+
+        function set_2d_data(self, data, dimensions, options)
+
+            arguments
+                self SpecData;
+                data = [];
+                dimensions int32 = [];
+                options.direction string = "vertical";
+            end
+
+            if isempty(data), return; end
+
+            % Is it a single spectrum?
+            if any(size(data) == 1)
+                options.dimensions = [1 1];
+                self.data = SpecData.unflatten(data, options.dimensions);
+                return;
+            end
+
+            % Convert
+            if isempty(dimensions)
+                    dimensions = [self.XSize self.YSize];
+            end
+            self.data = SpecData.unflatten(data, dimensions);
+
         end
         
 
@@ -437,16 +506,64 @@ classdef SpecData < SpecDataABC
     end
 
     methods (Static)
-        function flatdata = flatten(data)
+        function flatdata = flatten(data, direction)
             %FLATTEN Convert ixjxk (three-dimensional) data array to ixj
             %data array
             %   Returns a two-dimensional m-by-n array of spectral data
+            %   
+            %   Input:
+            %       - data      3d data
+            %       - direction (optional)  without: outputs m-by-n array,
+            %       where m is number of wavenumbers and n is number of
+            %       spectra. When horizontal: m = num spectra, n = num
+            %       wavenumbers
 
-            
+            arguments
+                data
+                direction string = "vertical";
+            end
 
             graphsize = size(data, 3);
             flatdata = permute(data, [3 1 2]);
             flatdata = reshape(flatdata, graphsize, [], 1);
+
+            % Transpose, if horizontal is desired
+            if direction == "horizontal"
+                flatdata = transpose(flatdata);
+            end
+        end
+
+        function threedimdata = unflatten(data, dimensions, options)
+            %UNFLATTEN Convert a two-dimension i*j data array to an ixjxk
+            %(three-dimensional) data array
+            %   Returns a three-dimensional mxnxo data array
+
+            arguments
+                data
+                dimensions int32 = [];
+                options.direction string = "vertical";
+                options.graphsize int32 = [];
+            end
+
+            if isempty(dimensions) || isempty(data)
+                out("Cannot unflatten data. Dimensions or data is empty.");
+                return;
+            end
+
+            % Make sure we get horizontal spectra --->
+            if options.direction == "vertical"
+                data = transpose(data);
+            end
+
+            % Check whether we can reshape
+            xsize = dimensions(1);
+            ysize = dimensions(2);            
+            assert(xsize*ysize == size(data, 1), "Cannot unflatten data. Provided dimensions %d x %d = %d do not match number of provided spectra: %d", xsize, ysize, xsize*ysize, size(data,1));
+
+            % Retrieve graphsize from array dimensions
+            if isempty(options.graphsize), options.graphsize = size(data,2); end
+
+            threedimdata = permute(reshape(data, xsize, ysize, options.graphsize), [2 1 3]);
         end
     end
 end
