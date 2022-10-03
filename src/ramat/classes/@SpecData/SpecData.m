@@ -314,15 +314,19 @@ classdef SpecData < SpecDataABC
                 options.zero_to_nan logical = true;
             end
 
-            % Get spectral data
-            dat = self.data;
+            non_nan_datasize = [];
 
-            % Process data
-            if options.zero_to_nan, dat = SpecData.zero_to_nan(dat); end
+            for s = self(:)'
+                % Get spectral data
+                dat = self.data;
 
-            non_nans = ~any(isnan(dat), 3);
+                % Process data
+                if options.zero_to_nan, dat = SpecData.zero_to_nan(dat); end
 
-            non_nan_datasize = sum(non_nans, "all");
+                non_nans = ~any(isnan(dat), 3);
+
+                non_nan_datasize(end+1) = sum(non_nans, "all"); %#ok<AGROW>
+            end
 
         end
 

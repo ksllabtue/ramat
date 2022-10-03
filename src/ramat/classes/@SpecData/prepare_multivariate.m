@@ -10,6 +10,8 @@ function [x, base] = prepare_multivariate(self, options)
         options.range double = [];
         options.normalize logical = false;
         options.normalization_range double = [];
+        options.rand_subset logical = false;
+        options.rand_num uint32 = 100;
     end
 
 
@@ -61,13 +63,13 @@ function [x, base] = prepare_multivariate(self, options)
 %             tmpdat.normalize_spectrum();
 %         end
         
-        flatdata = horzcat(tmpdat.FlatDataArray);
+        flatdata = tmpdat.get_formatted_export_array(include_wavenum=false, zero_to_nan=true, rand_subset=options.rand_subset, rand_num=options.rand_num, include_index_number=false);
         base = tmpdat.graph;
         
     else
         % Use the full range
         
-        flatdata = horzcat(tmpdat.FlatDataArray);
+        flatdata = tmpdat.get_formatted_export_array(include_wavenum=false, zero_to_nan=true, rand_subset=options.rand_subset, rand_num=options.rand_num, include_index_number=false);
         base = self.graph;
         
     end

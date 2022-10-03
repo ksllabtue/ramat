@@ -15,6 +15,8 @@ function pcaresult = calculatePCA(self, options)
         options.normalize logical = false;
         options.normalization_range double = [];
         options.ask_user_input = true;     % Ask for additional user input through prompt
+        options.rand_subset logical = false;
+        options.rand_num uint32 = 100;
     end
 
     % Ask for user input
@@ -28,7 +30,9 @@ function pcaresult = calculatePCA(self, options)
     [x, graph_base] = self.prepare_multivariate( ...
         range=options.range, ...
         normalize=options.normalize, ...
-        normalization_range=options.normalization_range);
+        normalization_range=options.normalization_range, ...
+        rand_subset=options.rand_subset, ...
+        rand_num=options.rand_num);
 
     % Choose inversion, svd-nsc is just svd with inverted pcs (to
     % approximate the NIPALS algorithm sign convention).

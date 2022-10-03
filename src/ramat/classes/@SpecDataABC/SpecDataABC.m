@@ -132,6 +132,7 @@ classdef (Abstract) SpecDataABC < DataItem
                 options.rand_num uint32 = 100;          % Number of randomly selected spectra
                 options.zero_to_nan logical = false;
                 options.ignore_nan logical = true;
+                options.include_index_number logical = true;
             end
 
             numarray = [];
@@ -155,10 +156,16 @@ classdef (Abstract) SpecDataABC < DataItem
                 if options.rand_subset
                     % Get a small selection
                     [sel_data, pos] = s.select_random(options.rand_num, zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan);
+                    
+                    dat = sel_data;
+
+                    if options.include_index_number
+                        dat = [pos(:)'; dat]; %#ok<AGROW>
+                    end
                     % Create data segment
-                    dat = zeros(s.GraphSize + 1, size(sel_data, 2));
-                    dat(1,:) = pos(:)';         % Append positions (spectral indices) as first row
-                    dat(2:end, :) = sel_data;   % Append selected data on following rows.
+                    %dat = zeros(s.GraphSize + 1, size(sel_data, 2));
+                    %dat(1,:) = pos(:)';         % Append positions (spectral indices) as first row
+                    %dat(2:end, :) = sel_data;   % Append selected data on following rows.
                 else
                     % Create data segment
                     dat = s.get_flatdata();
@@ -166,7 +173,7 @@ classdef (Abstract) SpecDataABC < DataItem
 
                 % When multiple items are selected, include index as first
                 % row.
-                if num_items > 1
+                if (num_items > 1 && options.include_index_number)
                     id_row = repmat(i,[1, size(dat, 2)]);
                     dat = [id_row; dat];
                 end
@@ -178,7 +185,11 @@ classdef (Abstract) SpecDataABC < DataItem
             end
 
             % Append flat data
-            numarray = [wavenum_col flatdata];
+            if options.include_wavenum
+                numarray = [wavenum_col flatdata];
+            else
+                numarray = flatdata;
+            end
 
             % Transpose
             if options.direction == "horizontal", numarray = transpose(numarray); end
