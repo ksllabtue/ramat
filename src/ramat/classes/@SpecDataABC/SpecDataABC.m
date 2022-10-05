@@ -233,11 +233,13 @@ classdef (Abstract) SpecDataABC < DataItem
             
             % This is returned by default
             opts = unpack(options);
-            data = self.get_flatdata(opts{:});
+            [data, idx] = self.get_flatdata(opts{:});
             datasize = size(data,2);
             pos = 1:datasize;
 
             % Check if we can actually sample from this
+            out("Numer of random samples to be selected:" + num2str(rand_num));
+            out("Numer of spectra:" + num2str(datasize));
             if rand_num > self.DataSize
                 warning("Number of random sampled spectra is larger than data size.");
                 return;
@@ -246,6 +248,10 @@ classdef (Abstract) SpecDataABC < DataItem
             % Select random spectra.
             pos = randperm(datasize, rand_num);
             data = data(:, pos);
+
+            % Convert positions in actual indices (might be different, if
+            % specrtra contained NaNs.)
+            pos = idx(pos);
 
         end
 
@@ -395,9 +401,20 @@ classdef (Abstract) SpecDataABC < DataItem
             
         end
 
-        function data = remove_nan(data)
+        function [data, idx] = remove_nan(data)
             %REMOVE_NAN Removes all nan spectra. Only works with flattened
             %spectra!
+            %   Removes nan columns, if all values in the column are NaNs.
+            %
+            %   Input:
+            %       data    flattened m*n data, where m = number of
+            %       spectra, n = number of wavenumbers
+            %
+            %   Output:
+            %       data    flattened l*n data, where l = number of spectra
+            %       without NaNs, n = number of wavenumbers
+            %       idx     retained column indices
+
 
             arguments
                 data {mustBeNumeric};
@@ -413,6 +430,9 @@ classdef (Abstract) SpecDataABC < DataItem
 
             % Set to nan
             data(:,idx) = [];
+
+            % Output indices
+            idx = find(~idx);
         end
     end
 

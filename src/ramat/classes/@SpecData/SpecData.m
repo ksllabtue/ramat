@@ -247,7 +247,7 @@ classdef SpecData < SpecDataABC
 
         end
 
-        function flatdata_out = get_flatdata(self, options)
+        function [flatdata_out, idx_out] = get_flatdata(self, options)
             %GET_FLATDATA Returns m*n (two-dimensional) matrix.
             %   Returns flattened array. Input can be an array of multiple
             %   SpecData objects. In that case, the sizes should be
@@ -263,11 +263,14 @@ classdef SpecData < SpecDataABC
             rownum = self(1).GraphSize;
 
             if ~options.ignore_nan
-                % Preallocated (optimized)
+                % Pre-allocate output if possible (speed optimization)
                 colnum = sum([self.DataSize]);
                 flatdata_out = zeros(rownum, colnum, 'double');
+                idx_out = zeros(1, colnum, 'int32');
             else
+                % Just initialize output variables
                 flatdata_out = double.empty(rownum,0);
+                idx_out = [];
             end
 
             % Size checks
@@ -287,22 +290,22 @@ classdef SpecData < SpecDataABC
 
                 % Flatten
                 flat = SpecData.flatten(dat);
+                numcols = size(flat,2);
+                idx = [idx_out, 1:numcols];
 
                 % Remove nans
-                if options.ignore_nan, flat = SpecData.remove_nan(flat); end
-                numcols = size(flat,2);
+                if options.ignore_nan, [flat, idx] = SpecData.remove_nan(flat); end
                 
-                % Insert
                 if ~options.ignore_nan
-                    % Concatenate optimized
+                    % Concatenate optimized and update column index
                     flatdata_out(:,colidx:colidx+numcols-1) = flat;
-                    % Update column index
+                    idx_out(:,colidx:colidx+numcols-1) = idx;
                     colidx = colidx + numcols;
-                    continue;
+                else
+                    % Concatenate non-optimized
+                    flatdata_out = [flatdata_out; flat]; %#ok<AGROW>
+                    idx_out = [idx_out, idx]; %#ok<AGROW>
                 end
-
-                % Concatenate non-optimized
-                flatdata_out = [flatdata_out; flat]; %#ok<AGROW>
             end
 
         end
@@ -328,6 +331,44 @@ classdef SpecData < SpecDataABC
                 non_nan_datasize(end+1) = sum(non_nans, "all"); %#ok<AGROW>
             end
 
+        end
+
+        function mask = gen_random_mask(self, rand_num, options)
+
+            arguments
+                self SpecData
+                rand_num int32 = 0;
+                options.zero_to_nan logical = true;
+                options.ignore_nan logical = true;
+            end
+
+            linear_mask = false(self.DataSize, 1);
+
+            opts = unpack(options);
+            [~, idx] = self.select_random(rand_num, opts{:});
+
+            linear_mask(idx) = true;
+
+            mask = reshape(linear_mask, [self.XSize, self.YSize]);
+
+        end
+
+        function mask = add_random_mask(self, rand_num, options)
+
+            arguments
+                self SpecData
+                rand_num int32 = 0;
+                options.zero_to_nan logical = true;
+                options.ignore_nan logical = true;
+            end
+
+            opts = unpack(options);
+            logical_mask = self.gen_random_mask(rand_num, opts{:});
+
+            mask = Mask(logical_mask);
+            mask.name = "Random mask with " + num2str(rand_num) + " data points.";
+
+            self.append_sibling(mask);
         end
 
 

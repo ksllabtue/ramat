@@ -50,17 +50,26 @@ classdef SpecFilter < DataItem
                 
                 switch self.operation
                     case 'sum'
+                        % Sum filter
                         res = sum(operand, 3);
                     case 'avg'
+                        % Average filter
                         res = mean(operand, 3);
                     case 'max'
+                        % Maximum filter
                         res = max(operand, [], 3);
                     case 'min'
+                        % Minimum filter
                         res = min(operand, [], 3);
                     case 'maxmin'
+                        % Get height difference
                         hi = max(operand, [], 3);
                         lo = min(operand, [], 3);
                         res = hi - lo;
+                    case 'maxloc'
+                        % Get location of maximum
+                        [~, idx] = max(operand, [], 3);
+                        res = s.graph(idx + idxrange(1));
                 end
 
                 % Append to output
