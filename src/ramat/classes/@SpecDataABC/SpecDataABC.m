@@ -229,6 +229,7 @@ classdef (Abstract) SpecDataABC < DataItem
                 rand_num uint32 = 100;
                 options.zero_to_nan logical = false;
                 options.ignore_nan logical = true;
+                options.use_mask logical = false;
             end
             
             % This is returned by default

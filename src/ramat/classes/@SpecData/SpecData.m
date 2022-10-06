@@ -333,7 +333,7 @@ classdef SpecData < SpecDataABC
 
         end
 
-        function mask = gen_random_mask(self, rand_num, options)
+        function random_selection = gen_random_selection(self, rand_num, options)
 
             arguments
                 self SpecData
@@ -349,7 +349,25 @@ classdef SpecData < SpecDataABC
 
             linear_mask(idx) = true;
 
-            mask = reshape(linear_mask, [self.XSize, self.YSize]);
+            random_selection = reshape(linear_mask, [self.XSize, self.YSize]);
+        end
+
+        function mask = gen_random_mask(self, rand_num, options)
+
+            arguments
+                self SpecData
+                rand_num int32 = 0;
+                options.zero_to_nan logical = true;
+                options.ignore_nan logical = true;
+            end
+
+            % Generate a random selection
+            opts = unpack(options);
+            maskdata = gen_random_selection(opts{:});
+
+            % Create a mask
+            mask = Mask(maskdata, self);
+            mask.name = "Random mask with " + num2str(rand_num) + " data points.";
 
         end
 
@@ -363,10 +381,7 @@ classdef SpecData < SpecDataABC
             end
 
             opts = unpack(options);
-            logical_mask = self.gen_random_mask(rand_num, opts{:});
-
-            mask = Mask(logical_mask);
-            mask.name = "Random mask with " + num2str(rand_num) + " data points.";
+            mask = self.gen_random_mask(rand_num, opts{:});
 
             self.append_sibling(mask);
         end
@@ -440,6 +455,27 @@ classdef SpecData < SpecDataABC
                 specnum = 1:s.DataSize;
                 tags = [tags; s.name + specnum'];
             end
+        end
+
+        function add_context_actions(self, cm, node, app)
+            %ADD_CONTEXT_ACTIONS Retrieve all (possible) actions for this
+            %data item that should be displayed in the context menu
+            %   This function adds menu items to the context menu, which
+            %   link to specific context actions for this data item.
+            %
+            arguments
+                self;
+                cm matlab.ui.container.ContextMenu;
+                node matlab.ui.container.TreeNode;
+                app ramatguiapp;
+            end
+
+            % Get parent actions of SpecDataABC
+            add_context_actions@SpecDataABC(self, cm, node, app);
+
+            % Add specific actions for SpecData
+            uimenu(cm, Text="Add random selection mask", MenuSelectedFcn=@(~,~) self.add_random_mask())
+
         end
 
         %% Overrides

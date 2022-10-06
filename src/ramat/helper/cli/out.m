@@ -7,17 +7,15 @@ function out(str, opts)
         opts.clear logical = 0;
     end
 
-    if isempty(opts.gui)
-        % Write to command line
-        fprintf(str);
-        fprintf("\n");
-        return;
+    fprintf(str);
+    fprintf("\n");
 
+    if isempty(opts.gui)
+        return;
     end
 
     if ~isvalid(opts.gui)
         warning("GUI element deleted.");
-        fprintf(str);
         return;
     end
 
