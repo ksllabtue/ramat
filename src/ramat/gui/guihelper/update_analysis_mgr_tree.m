@@ -13,8 +13,9 @@ function update_analysis_mgr_tree(app, analysis)
     
     tree = app.AnalysisMgrTree;
 
-    % Make sure we can select multiple links
+    % Make sure we can select multiple links and can edit items
     tree.Multiselect = "on";
+    tree.Editable = true;
 
     % Make sure tree has a single persisting context menu
     % And assign callback for dynamic updating of the context menu

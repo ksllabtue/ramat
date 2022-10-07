@@ -112,7 +112,9 @@ function [ax, f] = scoresscatter(pcaresult, pcax, options)
             scattertags = vertcat(s(i).UserData.get_tags());
 
             % Add information to data tooltips
-            s(i).DataTipTemplate.DataTipRows(end + 1) = dataTipTextRow("Spectrum: ", scattertags);
+            if numel(scattertags) > 1 % <--- fix
+                s(i).DataTipTemplate.DataTipRows(end + 1) = dataTipTextRow("Spectrum: ", scattertags);
+            end
 
         end
         

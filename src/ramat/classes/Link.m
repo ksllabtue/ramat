@@ -207,7 +207,7 @@ classdef Link < handle & matlab.mixin.indexing.RedefinesDot & matlab.mixin.Copya
             % Create menu for group assignment
             uimenu(cm, ...
                 'Text', 'Assign to New Group', ...
-                'Callback', {@assign_to, self, analysis, [], app});
+                'Callback', {@assign_to, selection, analysis, [], app});
             
             if numel(analysis.GroupSet) > 0
                 % The active analysis subset has groups
