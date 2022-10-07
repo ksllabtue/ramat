@@ -82,20 +82,20 @@ function update_app_selection_changed(app, event)
     % Invoke plot method of selected data containers 
     node_data.plot(Axes=ax, plot_type=plot_type, preview=true, PCs=app.get_selected_pcs);
 
-    if (node_data_type == "SpecData" && node_data(1).Data.DataSize > 1)
-        % Open dialogs for specdata large area scans
-        % Area Spectra Data Opened -> open filter window
-        if isempty(app.OpenedDialogs.SpectralAreaDataViewer) || ~isvalid(app.OpenedDialogs.SpectralAreaDataViewer)
-            % Open new data viewer
-            app.OpenedDialogs.SpectralAreaDataViewer = SpecAreaDataViewer(app, node_data);
-            
-        else
-            % Update data viewer
-            app.OpenedDialogs.SpectralAreaDataViewer.DataCon = node_data;
-            app.OpenedDialogs.SpectralAreaDataViewer.update();
-            
-        end
-    end
+%     if (node_data_type == "SpecData" && node_data(1).Data.DataSize > 1)
+%         % Open dialogs for specdata large area scans
+%         % Area Spectra Data Opened -> open filter window
+%         if isempty(app.OpenedDialogs.SpectralAreaDataViewer) || ~isvalid(app.OpenedDialogs.SpectralAreaDataViewer)
+%             % Open new data viewer
+%             app.OpenedDialogs.SpectralAreaDataViewer = SpecAreaDataViewer(app, node_data);
+%             
+%         else
+%             % Update data viewer
+%             app.OpenedDialogs.SpectralAreaDataViewer.DataCon = node_data;
+%             app.OpenedDialogs.SpectralAreaDataViewer.update();
+%             
+%         end
+%     end
  
     if node_data_type == "PCA"
         % If node is an analysis result, set this to the current active

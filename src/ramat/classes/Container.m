@@ -9,6 +9,7 @@ classdef (Abstract) Container < handle
         parent Group;
         parent_project Project;
         children {mustBeA(children, "DataItem")} = SpecData.empty();
+        meta struct = struct.empty();
     end
 
     properties (Dependent)

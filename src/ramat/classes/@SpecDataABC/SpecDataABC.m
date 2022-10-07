@@ -113,7 +113,7 @@ classdef (Abstract) SpecDataABC < DataItem
             
         end
 
-        function numarray = get_formatted_export_array(self, options)
+        function output = get_formatted_export_array(self, options)
             %GET_FORMATTED_EXPORT_ARRAY Outputs formatted flat array ready
             %for export or printing.
             %
@@ -133,66 +133,108 @@ classdef (Abstract) SpecDataABC < DataItem
                 options.zero_to_nan logical = false;
                 options.ignore_nan logical = true;
                 options.include_index_number logical = true;
+                options.as_table logical = false;       % Format as table (can only do horizontal!)
+                options.spectrum_names_from_container logical = true;
             end
 
-            numarray = [];
+            if options.as_table
+                options.direction = "horizontal";
+            end
+
+            output = [];
 
             % Create column with wave numbers
-            wavenum_col = [];
-            if options.include_wavenum, wavenum_col = self(1).graph; end
-            if options.rand_subset, wavenum_col = [0; wavenum_col]; end
+            wavenum = [];
+            if options.include_wavenum, wavenum = self(1).graph; end
 
             % Prepare for concatenation of multiple spectra
             num_items = numel(self);
-            if num_items > 1, wavenum_col = [0; wavenum_col]; end
 
             flatdata = [];
-            pos = [];
+            specdat_idx = [];
+            subspec_idx = [];
+            names = string.empty();
             i = 1;
 
             % Go through every spectrum s in self
             for s = self(:)' 
-                % Data segment creation
+                % Create a data segment
+                dat_seg_size = 0;
+
                 if options.rand_subset
                     % Get a small selection
-                    [sel_data, pos] = s.select_random(options.rand_num, zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan);
-                    
-                    dat = sel_data;
-
-                    if options.include_index_number
-                        dat = [pos(:)'; dat]; %#ok<AGROW>
-                    end
-                    % Create data segment
-                    %dat = zeros(s.GraphSize + 1, size(sel_data, 2));
-                    %dat(1,:) = pos(:)';         % Append positions (spectral indices) as first row
-                    %dat(2:end, :) = sel_data;   % Append selected data on following rows.
+                    [dat, pos] = s.select_random(options.rand_num, zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan);
                 else
-                    % Create data segment
+                    % Get everything
                     dat = s.get_flatdata();
+                    pos = 1:size(dat,2);
                 end
 
-                % When multiple items are selected, include index as first
-                % row.
-                if (num_items > 1 && options.include_index_number)
-                    id_row = repmat(i,[1, size(dat, 2)]);
-                    dat = [id_row; dat];
+                dat_seg_size = size(dat,2);
+                if options.spectrum_names_from_container
+                    dat_seg_name = s.parent_container.display_name;
+                else
+                    dat_seg_name = s.name;
                 end
+
+                % Concatenate indexing and naming
+                current_index = i*ones([1, dat_seg_size]);
+                specdat_idx = [specdat_idx, current_index]; %#ok<AGROW>
+                subspec_idx = [subspec_idx, pos(:)']; %#ok<AGROW>
+                names = [dat_seg_name, repmat(s.parent_container.display_name, [1, dat_seg_size])];
 
                 % Cocatenate data segment.
-                flatdata = [flatdata dat];
+                flatdata = [flatdata dat]; %#ok<AGROW>
 
                 i = i+1;
             end
 
-            % Append flat data
+            % Table output
+            if options.as_table
+                flatdata = transpose(flatdata);
+                data_table = array2table(flatdata);
+                
+                % Keep separated wavenumber columns?
+                if options.include_wavenum
+                    data_table.Properties.VariableNames = string(wavenum);
+                else
+                    data_table = mergevars(data_table, 1:width(data_table), NewVariableName="data");
+                end
+
+                % Attach index columns
+                indices = transpose([specdat_idx; subspec_idx]);
+                index_table = table(names', specdat_idx', subspec_idx', VariableNames=["spectrum", "spec_idx", "subspec_idx"]);
+                output = [index_table, data_table];
+
+                return;
+            end
+
+            % Numeric output
+
+            % Prepare for concatenation as numeric matrix
             if options.include_wavenum
-                numarray = [wavenum_col flatdata];
+                subspec_idx = [0, subspec_idx];
+                specdat_idx = [0, specdat_idx];
+            end
+            if options.include_wavenum
+                wavenum_col = wavenum;
+                if options.include_index_number
+                    wavenum_col = [0; 0; wavenum];
+                end
+%                 if options.rand_subset, wavenum = [0; wavenum]; end
+%                 if num_items > 1, wavenum = [0; wavenum]; end
+                output = [wavenum flatdata];
             else
-                numarray = flatdata;
+                output = flatdata;
+            end
+
+            % Add indices
+            if options.include_index_number
+                output = [specdat_idx; subspec_idx; output];
             end
 
             % Transpose
-            if options.direction == "horizontal", numarray = transpose(numarray); end
+            if options.direction == "horizontal", output = transpose(output); end
             
         end
 
@@ -229,7 +271,6 @@ classdef (Abstract) SpecDataABC < DataItem
                 rand_num uint32 = 100;
                 options.zero_to_nan logical = false;
                 options.ignore_nan logical = true;
-                options.use_mask logical = false;
             end
             
             % This is returned by default

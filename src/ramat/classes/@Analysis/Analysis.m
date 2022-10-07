@@ -289,6 +289,13 @@ classdef Analysis < handle
 
         end
 
+        function get_data_table(self)
+            %GET_DATA_TABLE
+
+            
+
+        end
+
         %% Destructor
         
         function delete(self)
