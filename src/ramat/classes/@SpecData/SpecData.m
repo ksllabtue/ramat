@@ -646,6 +646,21 @@ classdef SpecData < SpecDataABC
 
             threedimdata = permute(reshape(data, xsize, ysize, options.graphsize), [2 1 3]);
         end
+
+        function shift = calc_stackshift(spectra, multiplier)
+
+            arguments
+                spectra;
+                multiplier double = 1;
+            end
+
+            shift = 0;
+
+            % Apply multiplier to maximum value
+            maxs = max([spectra.FlatDataArray], [], "all");
+            shift = maxs * multiplier;
+
+        end
     end
 end
 
