@@ -18,6 +18,7 @@ function pcaresult = compute_pca(self, options)
         options.normalization_range double = [];
         options.rand_subset logical = false;
         options.rand_num uint32 = 100;
+        options.ask_prompt logical = true;
     end
     
     pcaresult = PCAResult.empty;
@@ -25,7 +26,9 @@ function pcaresult = compute_pca(self, options)
     % Create copy of analysis as struct
     s = self.struct(selection = true, specdata = true, accumsize = true);
 
-    options = ask_selection(options);
+    if options.ask_prompt
+        options = ask_selection(options);
+    end
 
     % Corret accumsize of random selection, very hacky
     % to do: fix
@@ -53,7 +56,8 @@ function pcaresult = compute_pca(self, options)
         normalize = options.normalize, ...
         normalization_range = options.normalization_range, ...
         rand_subset=options.rand_subset, ...
-        rand_num=options.rand_num);
+        rand_num=options.rand_num, ...
+        ask_user_input=options.ask_prompt);
 
     % Provide source reference
     pcaresult.source = self;

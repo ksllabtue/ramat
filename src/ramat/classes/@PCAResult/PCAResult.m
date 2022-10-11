@@ -337,12 +337,13 @@ classdef PCAResult < DataItem
     end
 
     methods (Static)
-        function wide_table = tall_to_wide(scores_tbl)
+        function wide_table = tall_to_wide(scores_tbl, options)
             %TALL_TO_WIDE Summary of this function goes here
             %   Detailed explanation goes here
         
             arguments
                 scores_tbl table;
+                options.column string = "";
             end
         
             number_of_groups = max(scores_tbl.group_index);
@@ -351,13 +352,15 @@ classdef PCAResult < DataItem
             unique_group_names = string(unique(scores_tbl.group_name, "stable"));
         
             % Where is the scores data
-            column = string(scores_tbl.Properties.VariableNames(end));
+            if options.column == ""
+                options.column = string(scores_tbl.Properties.VariableNames(end));
+            end
         
             % Preallocate array
             wide_table = nan(number_of_samples, number_of_groups);
         
             for group = unique_group_indices(:)'
-                group_average_scores = scores_tbl.(column)(scores_tbl.group_index == group);
+                group_average_scores = scores_tbl.(options.column)(scores_tbl.group_index == group);
                 wide_table(1:size(group_average_scores,1), group) = group_average_scores;
             end
 
