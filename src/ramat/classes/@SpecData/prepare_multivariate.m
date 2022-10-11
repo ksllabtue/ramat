@@ -24,13 +24,9 @@ function [x, base] = prepare_multivariate(self, options)
     end
 
     if ~isempty(options.range)
-        % Calculate PCA of a specific range
-        startG = options.range(1);
-        endG = options.range(2);
-        
+        % Calculate PCA of a specific range      
         % Create a trimmed SpecData() as a copy.
-        tmpdat = trim_spectrum(tmpdat, startG, endG);
-
+        tmpdat = trim_spectrum(tmpdat, options.range);
 
         % --- TO DO ---
         % Strategy to deal with different graph bases

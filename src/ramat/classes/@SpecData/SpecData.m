@@ -68,7 +68,7 @@ classdef SpecData < SpecDataABC
         remove_baseline(self, method, kwargs);
         out = clipByMask(self, mask);
         y = tsne(self, opts);
-        out = trim_spectrum(self, startg, endg, opts);
+        out = trim_spectrum(self, range, opts);
     end
     
     methods
@@ -336,7 +336,7 @@ classdef SpecData < SpecDataABC
         function random_selection = gen_random_selection(self, rand_num, options)
 
             arguments
-                self SpecData
+                self (1,1) SpecData
                 rand_num int32 = 0;
                 options.zero_to_nan logical = true;
                 options.ignore_nan logical = true;
@@ -355,7 +355,7 @@ classdef SpecData < SpecDataABC
         function mask = gen_random_mask(self, rand_num, options)
 
             arguments
-                self SpecData
+                self (1,1) SpecData;
                 rand_num int32 = 0;
                 options.zero_to_nan logical = true;
                 options.ignore_nan logical = true;
@@ -363,7 +363,7 @@ classdef SpecData < SpecDataABC
 
             % Generate a random selection
             opts = unpack(options);
-            maskdata = gen_random_selection(opts{:});
+            maskdata = self.gen_random_selection(rand_num, opts{:});
 
             % Create a mask
             mask = Mask(maskdata, self);
@@ -374,7 +374,7 @@ classdef SpecData < SpecDataABC
         function mask = add_random_mask(self, rand_num, options)
 
             arguments
-                self SpecData
+                self (1,1) SpecData;
                 rand_num int32 = 0;
                 options.zero_to_nan logical = true;
                 options.ignore_nan logical = true;
