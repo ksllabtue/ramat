@@ -135,6 +135,7 @@ classdef (Abstract) SpecDataABC < DataItem
                 options.include_index_number logical = true;
                 options.as_table logical = false;       % Format as table (can only do horizontal!)
                 options.spectrum_names_from_container logical = true;
+                options.use_mask logical = true;
             end
 
             if options.as_table
@@ -166,7 +167,7 @@ classdef (Abstract) SpecDataABC < DataItem
                     [dat, pos] = s.select_random(options.rand_num, zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan);
                 else
                     % Get everything
-                    dat = s.get_flatdata();
+                    dat = s.get_flatdata(use_mask=options.use_mask);
                     pos = 1:size(dat,2);
                 end
 
@@ -246,6 +247,26 @@ classdef (Abstract) SpecDataABC < DataItem
                 self;
                 options.zero_to_nan logical = false;
                 options.ignore_nan logical = true;
+                options.use_mask logical = true;
+            end
+
+            dat = self.data;
+
+            % Process data
+            if options.zero_to_nan, dat = SpecData.zero_to_nan(dat); end
+            if options.ignore_nan, dat = SpecData.remove_nan(dat); end
+            
+            flatdata = dat;
+        end
+
+        function flatdata = get_flatdata_single(self, options)
+            %FLATDATA_SINGLE
+            % PLACEHOLDER. This function is overriden in <SpecData>
+
+            arguments
+                self;
+                options.zero_to_nan logical = false;
+                options.ignore_nan logical = true;
             end
 
             dat = self.data;
@@ -275,7 +296,7 @@ classdef (Abstract) SpecDataABC < DataItem
             
             % This is returned by default
             opts = unpack(options);
-            [data, idx] = self.get_flatdata(opts{:});
+            [data, idx] = self.get_flatdata_single(opts{:});
             datasize = size(data,2);
             pos = 1:datasize;
 
