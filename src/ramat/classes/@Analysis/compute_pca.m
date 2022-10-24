@@ -4,88 +4,96 @@ function pcaresult = compute_pca(self, options)
     %   Input:
     %       self
     %       options.Range:      range [2x1 array] in cm^-1
-    %       options.Selection   selection of DataContainers
     %
     %   Output:
     %       pcaresult:  PCAResult object
     
     arguments
         self Analysis
-        options.Range double = [];
-        options.Selection (:,:) DataContainer = DataContainer.empty;
+        options.?PCAOptions;
+        options.use_range logical = false;
+        options.range double = [];
         options.algorithm = "svd";
         options.normalize logical = false;
         options.normalization_range double = [];
         options.rand_subset logical = false;
         options.rand_num uint32 = 100;
-        options.ask_prompt logical = true;
+        options.use_mask logical = false;
+        options.create_mask logical = true;
+        options.zero_to_nan logical = false;
+        options.ignore_nan logical = true;
     end
     
     pcaresult = PCAResult.empty;
 
+    opts = unpack(options);
+
     % Create copy of analysis as struct
     s = self.struct(selection = true, specdata = true, accumsize = true);
 
-    if options.ask_prompt
-        options = ask_selection(options);
+    % Prepare multivariate data: trimming, normalization
+    for i = 1:numel(s)
+        specdata = vertcat(s(i).specdata);
+        s(i).specdata_prepared = specdata.prepare_multivariate_2(opts{:});
     end
 
-    % Corret accumsize of random selection, very hacky
-    % to do: fix
-    if options.rand_subset
-        for i = 1:numel(s)
-            non_nan_size = s(i).specdata.get_non_nan_datasize(zero_to_nan=true);
-            rand_sub_req = options.rand_num*int32(ones([numel(s(i).specdata), 1]));
-            rand_sub_req(rand_sub_req > non_nan_size) = non_nan_size(rand_sub_req > non_nan_size);
-            s(i).accumsize = sum(rand_sub_req);
-        end
+    % Assert equal graph sizes
+    all_specdata = vertcat(s.specdata_prepared);
+    all_specdata.force_equal_graph_size();
+
+    % Create master data table
+    for i = 1:numel(s)
+        specdata = vertcat(s(i).specdata_prepared);
+        [datatbl, wavenum] = specdata.get_formatted_export_array(...
+            as_table=true, ...
+            merge_data_cols=true, ...
+            rand_subset=options.rand_subset, ...
+            rand_num=options.rand_num, ...
+            use_mask=options.use_mask, ...
+            create_mask=options.create_mask, ...
+            zero_to_nan=options.zero_to_nan, ...
+            ignore_nan=options.ignore_nan);
+
+        s(i).accumsize = height(datatbl);
+
+        % Get full group vector/column
+        group_indices = repmat(i, [s(i).accumsize, 1]);
+        group_names = repmat(s(i).name, [s(i).accumsize, 1]);
+
+        % Get full sample vector/column
+        sample_names = s(i).sample_names(datatbl.spec_idx);
+        [~, ~, sample_indices] = unique(sample_names, "stable");
+
+        labels = table(group_indices, group_names, sample_indices, sample_names,...
+            VariableNames=["group_index", "group_name", "sample_index", "sample_name"]);
+
+        % Horzcat tables
+        s(i).tbl = [labels, datatbl];
+
     end
 
-    specdata = vertcat(s.specdata);
+    tbl = vertcat(s.tbl);
+    rmfield(s, 'tbl');
+
+    data = tbl.data;
 
     % Check if spectral data has been selected
-    if isempty(specdata)
+    if isempty(data)
         warning("No spectral data has been selected");
         return;
     end
 
     % Calculate PCA
-    pcaresult = specdata.calculatePCA( ...
-        range = options.Range, ...
-        algorithm = options.algorithm, ...
-        normalize = options.normalize, ...
-        normalization_range = options.normalization_range, ...
-        rand_subset=options.rand_subset, ...
-        rand_num=options.rand_num, ...
-        ask_user_input=options.ask_prompt);
-
+    pcaresult = SpecData.calculate_pca_static(data, opts{:});
+    pcaresult.CoefsBase = wavenum;
+    
     % Provide source reference
     pcaresult.source = self;
     pcaresult.source_data = s;
+    pcaresult.source_table = tbl;
     pcaresult.name = sprintf("PCAResult from %s", self.display_name);
 
-    function options = ask_selection(options)
-        % Ask additional information on normalization
-
-        % Ask prompt
-        prompt = {'Do you want to select a subset? Enter the amount of spectra per measurement. Leave empty for no selection.'};
-        dlgtitle = 'Subset';
-        dims = [1 70];
-        definput = {'0'};
-        answer = inputdlg(prompt,dlgtitle,dims,definput);
-
-        % Parse input
-        num = int32(str2double(answer{1}));
-        fprintf("Entered subset: " + num2str(num) + "\n");
-
-        % Parse input
-        if num == 0, return; end
-        if numel(num) ~= 1, return; end
-
-        options.rand_subset = true;
-        options.rand_num = num;
-
-    end
+    pcaresult.generate_description();
 
 end
 

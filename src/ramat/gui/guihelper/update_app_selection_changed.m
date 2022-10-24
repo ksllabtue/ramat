@@ -108,7 +108,7 @@ function update_app_selection_changed(app, event)
         app.prj.ActiveAnalysisResult = pcares;
         app.TabGroup.SelectedTab = app.PCATab;
 
-        app.PCADescription.Value = pcares.data.description;
+        app.PCADescription.Value = pcares.data.generate_description;
         
     end
             

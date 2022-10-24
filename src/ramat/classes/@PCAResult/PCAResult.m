@@ -18,6 +18,7 @@ classdef PCAResult < DataItem
         source Analysis = Analysis.empty();
         source_data struct = struct();
         source_opts struct = struct();
+        source_table table;
 
         % Other info
         CoefsBase double = [0 1];               % Spectral Base for loadings plot of the coefficients
@@ -64,8 +65,6 @@ classdef PCAResult < DataItem
             self.Coefs = coefs;
             self.Score = score;
             self.Variance = variance;
-
-            self.description = self.generate_description();
                         
         end
         
@@ -260,7 +259,17 @@ classdef PCAResult < DataItem
             % Add parent actions of DataItem
             add_context_actions@DataItem(self, cm, node, app);
 
+            menu_item = uimenu(cm, Text="Print data table", MenuSelectedFcn=@(~,~) print_data_table(self));
+
             % Add specific context actions for PCAResult
+            menu_item = uimenu(cm, Text="Brushing / Masking ...");
+
+            brushed = get(app.UIPreviewAxes.Children, "BrushData");
+            brushed = horzcat(brushed{:});
+
+            uimenu(menu_item, Text="Output brushed data as table", MenuSelectedFcn=@(~,~) self.dump_brushed(brushed));
+            uimenu(menu_item, Text="Remove brushed data from mask", MenuSelectedFcn=@(~,~) self.remove_brushed(brushed));
+
             menu_item = uimenu(cm, Text="Export Scores ...");
 
             uimenu(menu_item, Text="All scores", MenuSelectedFcn=@(~,~) self.export_scores());
@@ -277,6 +286,11 @@ classdef PCAResult < DataItem
 
             uimenu(cm, Text="Export ...", MenuSelectedFcn=@(~,~) ExportOptionsDialog(self));
 
+            function print_data_table(self)
+                table = self.source_table;
+                dump_selection(table);
+            end
+            
             function print_scores(self, varargin)
                 table = self.get_scores_summary(varargin{:});
                 dump_selection(table);
@@ -291,6 +305,27 @@ classdef PCAResult < DataItem
                 update_data_items_tree(app, self.parent_container);
             end
 
+        end
+
+        function dump_brushed(self, brushed)
+            brushed = find(brushed);
+            if isempty(brushed), return; end
+            disp(self.source_table(brushed, :));
+        end
+
+        function remove_brushed(self, brushed)
+            brushed = find(brushed);
+            if isempty(brushed), return; end
+            t = self.source_table(brushed, :);
+
+            numb = height(t);
+            for i = 1:numb
+                group = t.group_index(i);
+                spec_idx = t.spec_idx(i);
+                subspec_idx = t.subspec_idx(i);
+
+                
+            end
         end
 
         function export_scores(self, options)

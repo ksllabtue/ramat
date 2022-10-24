@@ -69,6 +69,12 @@ classdef SpecData < SpecDataABC
         out = clipByMask(self, mask);
         y = tsne(self, opts);
         out = trim_spectrum(self, range, opts);
+        tmpdata = prepare_multivariate_2(self, opts);
+        self = force_equal_graph_size(self);
+    end
+
+    methods (Static)
+        pcaresult = calculate_pca_static(opts);
     end
     
     methods
@@ -247,7 +253,7 @@ classdef SpecData < SpecDataABC
 
         end
 
-        function [flatdata_out, spec_idx_out, data_idx_out, names] = get_flatdata(self, options)
+        function [flatdata_out, data_idx_out, spec_idx_out, names] = get_flatdata(self, options)
             %GET_FLATDATA Returns m*n (two-dimensional) matrix.
             %   Returns flattened array. Input can be an array of multiple
             %   SpecData objects. In that case, the sizes should be
@@ -357,7 +363,7 @@ classdef SpecData < SpecDataABC
 
             if options.select_random
                 if options.use_mask
-                    [output, idx] = self.get_masked_output(zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan);
+                    [output, idx] = self.get_masked_output(zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan, create_mask=options.create_mask, rand_num=options.rand_num);
                     return;
                 end
 
@@ -389,14 +395,20 @@ classdef SpecData < SpecDataABC
                 self SpecData;
                 options.zero_to_nan logical = false;
                 options.ignore_nan logical = true;
+                options.create_mask logical = false;
+                options.rand_num int32 = 100;
             end
 
             % Can we actually do masking?
-            if isempty(self.mask)
+            if isempty(self.mask) && ~options.create_mask
                 out("Argument 'use_mask' was set to TRUE, but SpecData does not have a mask. Outputting all data.");
                 opts = unpack(options);
                 [output, idx] = self.get_flatdata_single(opts{:}, "use_mask", false);
                 return;
+            end
+
+            if isempty(self.mask) && options.create_mask
+                self.add_random_mask(options.rand_num, zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan);
             end
 
             % Checks

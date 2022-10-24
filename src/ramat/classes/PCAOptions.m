@@ -1,10 +1,10 @@
 classdef PCAOptions
     properties
         use_range logical = false;
-        Range double = [];
+        range double = [600, 1800];
         algorithm = "svd";
         normalize logical = false;
-        normalization_range double = [];
+        normalization_range double = [600, 1800];
         rand_subset logical = false;
         rand_num uint32 = 100;
         use_mask logical = false;
