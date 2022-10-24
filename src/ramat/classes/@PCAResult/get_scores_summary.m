@@ -29,7 +29,7 @@ function [scorestable, scores_data_col] = get_scores_summary(self, options)
 
     % Optimize output for direct use in GraphPad Prism
     if options.optimized_for_prism
-        scorestable = PCAResult.tall_to_wide(scorestable);
+        scorestable = PCAResult.tall_to_wide(scorestable, column=scores_data_col);
     end
 
     % User input
