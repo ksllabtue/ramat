@@ -3,8 +3,9 @@ classdef SpecFilter < DataItem
     %   Detailed explanation goes here
     
     properties
-        range;  % Working Range of Filter
-        operation;  % Mathematical Operation to Perform
+        range;              % Working Range of Filter
+        operation;          % Mathematical Operation to Perform
+        parent_specdata;    % Linked spectral data
     end
     
     properties (SetAccess = private)
@@ -29,14 +30,19 @@ classdef SpecFilter < DataItem
             
         end
         
-        function result = getResult(self, specdat)
+        function result = get_result(self, specdat)
             %   RESULT
             %   specdat:    Operand (Input)
             %   result:     Output
 
             arguments
                 self SpecFilter;
-                specdat SpecData;
+                specdat SpecData = SpecData.empty;
+            end
+
+            % What is our operand?
+            if isempty(specdat)
+                specdat = self.parent_specdata;
             end
 
             % Preallocate
@@ -83,6 +89,50 @@ classdef SpecFilter < DataItem
             end
             
         end
+
+        function [ax, f] = plot(self, options)
+            %PLOT Plotting method for SpecFilter
+
+            arguments
+                self;
+                options.?PlotOptions;
+                options.Axes = [];
+            end
+
+            % Get axes handle or create new figure window with empty axes
+            [ax, f] = self.plot_start(Axes = options.Axes);
+
+            % Plot generated result
+            imgdata = self.get_result();
+            imagesc(imgdata);
+
+        end
+
+        function add_context_actions(self, cm, node, app)
+            %ADD_CONTEXT_ACTIONS Retrieve all (possible) actions for this
+            %data item that should be displayed in the context menu
+            %   This function adds menu items to the context menu, which
+            %   link to specific context actions for this data item.
+            %
+            arguments
+                self;
+                cm matlab.ui.container.ContextMenu;
+                node matlab.ui.container.TreeNode;
+                app ramatguiapp;
+            end
+
+            % Get parent actions of DataItem
+            add_context_actions@DataItem(self, cm, node, app);
+
+            % Add plotting menu
+            uimenu(cm, Text="Plot spectral filter output", MenuSelectedFcn=@(~,~) plot(self));
+
+            % Edit spectral filter
+            uimenu(cm, Text="Edit spectral filter");
+
+
+        end
+
     end
 
     methods (Static)
@@ -98,7 +148,7 @@ classdef SpecFilter < DataItem
             options = unpack(options);
             filter = SpecFilter(options{:});
 
-            result = filter.getResult(specdat);
+            result = filter.get_result(specdat);
 
             filter.delete();
         end

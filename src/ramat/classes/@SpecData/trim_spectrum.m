@@ -1,20 +1,20 @@
-function self = trim_spectrum(self, startG, endG, kwargs)
+function self = trim_spectrum(self, range, kwargs)
     % Trims spectral data to [startG, endG]
     % startG and endG should be provided in the graph units, ie. if
     % graph units are given in 1/cm, the trim limits should be in
     % the same units.
 
     arguments
-        self;
-        startG;
-        endG;
+        self SpecData;
+        range (2,1) double = [];
         kwargs.copy logical = false;
     end
 
-    range = [startG endG];
+    fprintf("%s\n", "Trimming " + num2str(numel(self)) + " spectra, using range: " + num2str(range) + " cm-1.");
 
-    fprintf("Trimming " + num2str(numel(self)) + " spectra, using range: " + num2str(range) + " cm-1.\n");
-
+    startG = range(1);
+    endG = range(2);
+    
     if (endG > startG)
         % Trim Region is valid
 

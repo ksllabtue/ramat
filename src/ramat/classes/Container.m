@@ -187,6 +187,8 @@ classdef (Abstract) Container < handle
 % 
 %         end
 
+
+
     end
 
     methods
@@ -208,6 +210,67 @@ classdef (Abstract) Container < handle
             %GET_DATA Returns handle to main data.
 
             data = [];
+
+        end
+
+        function set_meta(self, field, value)
+            %SET_META
+
+            assert(field ~= "name", "Naming field 'name' is not allowed.");
+            assert(field ~= "id", "Naming field 'id' is not allowed.");
+
+            for s = self(:)'
+                s.meta(1).(field) = value;
+            end
+        end
+
+        function out = get_meta(self, field, options)
+            %GET_META
+            arguments
+                self
+                field string = "";
+                options.as_table logical = false;
+            end
+
+            out = {};
+
+            for i = 1:numel(self)
+                if ~isfield(self(i).meta, field)
+                    out{i} = [];
+                    continue;
+                end
+
+                % Add output
+                out{i} = self(i).meta.(field);
+            end
+
+
+            % Is homogeneous?
+            celltype = cellfun(@(x) string(class(x)),out);
+            if ~all(celltype(1) == celltype), return; end
+
+            % Homogenize output
+            out = cell2mat(out);
+            out = out(:);
+        end
+
+        function t = get_meta_table(self)
+
+            meta_s = self(1).meta;
+            meta_s(1).name = self(1).display_name;
+            meta_s(1).id = 1;
+            t = struct2table(meta_s);
+           
+            
+            if numel(self) == 1, return; end
+
+            for i = 2:numel(self)
+                meta_s = self(i).meta;
+                meta_s(1).name = self(i).display_name;
+                meta_s(1).id = i;
+                t2 = struct2table(meta_s);
+                t = outerjoin(t,t2,MergeKeys=true);
+            end
 
         end
 

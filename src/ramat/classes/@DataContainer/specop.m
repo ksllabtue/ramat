@@ -15,9 +15,6 @@ function specop(self, operation, kwargs)
 
     if any(operation == ["sum"; "mean"; "multiply"; "subtract"])
         if ~all(self.dataType == "SpecData"), return; end
-
-        
-
     end
 
     if any(operation == ["trim"; "normalize"])

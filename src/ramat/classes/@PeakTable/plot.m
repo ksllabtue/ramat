@@ -40,7 +40,7 @@ function ax = plot(self, options)
         [ax, ~] = parent_spectra.plot(Axes = ax, plot_type = options.plot_type, plot_stack_distance = options.plot_stack_distance);        
         
         if options.plot_type == "Stacked"
-            yshift = parent_spectra.calculate_stack_shift(options.plot_stack_distance);
+            yshift = SpecData.calc_stackshift(parent_spectra, options.plot_stack_distance);
         end
     end
 %     for ptable = self(:)'
@@ -75,7 +75,7 @@ function ax = plot(self, options)
     
             % Use fancy peak markers?
             if options.fancy_peak_markers
-                pm = PeakMarker(ax, peak.x, peak.y, peak.neg, fontsize=13);
+                pm = PeakMarker(ax, peak.x, peak.y, peak.neg, fontsize=11);
 
                 pm.fix_shift(-yshift * ti);
                 continue;

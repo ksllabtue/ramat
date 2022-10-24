@@ -162,15 +162,11 @@ classdef DataContainer < Container
                 options.?ExportOptions;
             end
 
-            % Selection must be homogeneous
-            if ~self.is_homogeneous_array(), return; end
-
-            % It should be spectral data
-            self = self.filter_data_type("SpecData");
-            if isempty(self), return; end
+            dat = [];
 
             % Get data items
-            data_items = self.get_data();
+            data_items = check_and_get_specdata(self);
+            if isempty(data_items), return; end
 
             % Call function of SpecDataABC
             options = unpack(options);
@@ -389,6 +385,7 @@ classdef DataContainer < Container
 
             % Retrieve default icon for DataContainer
             icon = get_icon@Container(self);
+            if ~isvalid(self) || isempty(self), return; end
             if isempty(self.Data), return; end
 
             % Retrieve icon, based on current data item
@@ -404,6 +401,42 @@ classdef DataContainer < Container
             
             maxval = max( vertcat( self.DataPreview ) );
             
+        end
+
+        function dat = normalize_spectrum(self, options)
+            %NORMALIZE SPECTRUM Wrapper function to normalize spectra
+
+            arguments
+                self;
+                options.copy logical = false;
+                options.range double = [];
+            end
+
+            % Get spectral data
+            data_items = check_and_get_specdata(self);
+            if isempty(data_items), return; end
+
+            % Call function of SpecDataABC
+            options = unpack(options);
+            dat = data_items.normalize_spectrum(options{:});
+        end
+
+        function dat = trim_spectrum(self, range, options)
+            %NORMALIZE SPECTRUM Wrapper function to normalize spectra
+
+            arguments
+                self;
+                range double = [];
+                options.copy logical = false;
+            end
+
+            % Get spectral data
+            data_items = check_and_get_specdata(self);
+            if isempty(data_items), return; end
+
+            % Call function of SpecDataABC
+            options = unpack(options);
+            dat = data_items.trim_spectrum(options{:});
         end
 
         function r = mean(self)
@@ -481,6 +514,24 @@ classdef DataContainer < Container
 
         
         %% Other methods
+        function specdat = check_and_get_specdata(self)
+            %CHECK_AND_GET_SPECDATA Checks whether selection is homogeneous
+            % and contains spectral data. If yes, return handles to 
+            % spectral data.
+
+            specdat = SpecData.empty();
+
+            % Selection must be homogeneous
+            if ~self.is_homogeneous_array(), return; end
+
+            % It should be spectral data
+            self = self.filter_data_type("SpecData");
+            if isempty(self), return; end
+
+            % Get data items
+            specdat = self.get_data();
+        end
+
         function t = listDataItems(self)
             t = listItems(self.DataItems);
         end
