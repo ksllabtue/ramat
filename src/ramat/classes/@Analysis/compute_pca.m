@@ -32,7 +32,7 @@ function pcaresult = compute_pca(self, options)
     if options.rand_subset
         for i = 1:numel(s)
             non_nan_size = s(i).specdata.get_non_nan_datasize(zero_to_nan=true);
-            rand_sub_req = options.rand_num*ones([numel(s(i).specdata), 1]);
+            rand_sub_req = options.rand_num*int32(ones([numel(s(i).specdata), 1]));
             rand_sub_req(rand_sub_req > non_nan_size) = non_nan_size(rand_sub_req > non_nan_size);
             s(i).accumsize = sum(rand_sub_req);
         end

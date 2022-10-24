@@ -19,7 +19,7 @@ classdef Link < handle & matlab.mixin.indexing.RedefinesDot & matlab.mixin.Copya
 
     % Cached properties, in case target gets deleted.
     properties (Access = private)
-        cached_display_name string;
+        cached_display_name string = "";
     end
 
     properties (Dependent)
@@ -81,14 +81,24 @@ classdef Link < handle & matlab.mixin.indexing.RedefinesDot & matlab.mixin.Copya
         function displayname = get.display_name(self)
             %DISPLAY_NAME Constructs display name
 
-            if isempty(self.target), self.get_deleted_name(); return; end
-            if ~isvalid(self.target), self.get_deleted_name(); return; end
+            arguments
+                self Link;
+            end
 
+            % Default
+            displayname = "<INVALID>";
+
+            % Check if data container was deleted
+            if isempty(self.target), displayname = self.get_deleted_name(); return; end
+            if ~isvalid(self.target), displayname = self.get_deleted_name(); return; end
+
+            % Did we set a custom name for this link?
             if self.name ~= ""
                 displayname = self.name;
                 return;
             end
 
+            % Return name of data container
             displayname = self.target.display_name;
             self.cached_display_name = self.target.display_name;
 
@@ -112,8 +122,9 @@ classdef Link < handle & matlab.mixin.indexing.RedefinesDot & matlab.mixin.Copya
         end
 
         function displayname = get_deleted_name(self)
-
+            
             displayname = "(DELETED) " + self.cached_display_name;
+            out("This Link links to a deleted datacontainer: " + self.cached_display_name +  ". You might want to remove this link.");
             
         end
 
@@ -171,11 +182,15 @@ classdef Link < handle & matlab.mixin.indexing.RedefinesDot & matlab.mixin.Copya
         function remove(self)
             %REMOVE Soft Destructor
 
-            % Unset at parent
-            self.parent.children(self.parent.children == self) = [];
-
-            % Destruct
-            self.delete();
+            for s = self(:)'
+                out("Removing Link: " + s.cached_display_name);
+    
+                % Unset at parent
+                s.parent.children(s.parent.children == s) = [];
+    
+                % Destruct
+                s.delete();
+            end
 
         end
 

@@ -10,8 +10,11 @@ function self = trim_spectrum(self, range, kwargs)
         kwargs.copy logical = false;
     end
 
-    fprintf("Trimming " + num2str(numel(self)) + " spectra, using range: " + num2str(range) + " cm-1.\n");
+    fprintf("%s\n", "Trimming " + num2str(numel(self)) + " spectra, using range: " + num2str(range) + " cm-1.");
 
+    startG = range(1);
+    endG = range(2);
+    
     if (endG > startG)
         % Trim Region is valid
 

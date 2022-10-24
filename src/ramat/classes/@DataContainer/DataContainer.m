@@ -385,6 +385,7 @@ classdef DataContainer < Container
 
             % Retrieve default icon for DataContainer
             icon = get_icon@Container(self);
+            if ~isvalid(self) || isempty(self), return; end
             if isempty(self.Data), return; end
 
             % Retrieve icon, based on current data item

@@ -49,7 +49,7 @@ classdef SpecData < SpecDataABC
         filter;
         filter_output;
 
-        FilteredData;
+%         FilteredData;
         FlatDataArray;
 %         GraphSize;
         XSize;
@@ -247,31 +247,50 @@ classdef SpecData < SpecDataABC
 
         end
 
-        function [flatdata_out, idx_out] = get_flatdata(self, options)
+        function [flatdata_out, spec_idx_out, data_idx_out, names] = get_flatdata(self, options)
             %GET_FLATDATA Returns m*n (two-dimensional) matrix.
             %   Returns flattened array. Input can be an array of multiple
             %   SpecData objects. In that case, the sizes should be
             %   consistent.
+            %   
+            %   Input:
+            %       self            n*1 SpecData
+            %       .zero_to_nan
+            %       .ignore_nan
+            %       .use_mask
+            %
+            %   Output:
+            %       flatdata_out    m*n double  Flattened data, where m =
+            %        number of wavenumbers, n = number of spectra
+            %       spec_idx_out    1*n int32   Spectral index
+            %       data_idx_out    1*n int32   Data index
 
             arguments
                 self SpecData;
                 options.zero_to_nan logical = false;
                 options.ignore_nan logical = true;
+                options.select_random logical = false;
+                options.rand_num int32 = 100;
                 options.use_mask logical = true;
+                options.create_mask logical = true;
             end
 
             % Prepare output
-            rownum = self(1).GraphSize;
+            rownum = self(1).GraphSize;         % Number of wavenumbers
+            colidx = 1;                         % Column (spectrum) index
+            datidx = int32(1);                  % SpecData index
+            data_idx_out = int32.empty();       % SpecData index output vector
+            names = string.empty();             % Names string output vector
 
             if ~options.ignore_nan
                 % Pre-allocate output if possible (speed optimization)
                 colnum = sum([self.DataSize]);
                 flatdata_out = zeros(rownum, colnum, 'double');
-                idx_out = zeros(1, colnum, 'int32');
+                spec_idx_out = zeros(1, colnum, 'int32');
             else
                 % Just initialize output variables
                 flatdata_out = double.empty(rownum,0);
-                idx_out = [];
+                spec_idx_out = [];
             end
 
             % Size checks
@@ -280,38 +299,70 @@ classdef SpecData < SpecDataABC
                 return;
             end
 
-            colidx = 1;
-
+            % Go through every spectrum
             for spectrum = self(:)'
 
-                if options.use_mask
-                    % Get masked flat spectral data
-                    [flat, idx] = spectrum.get_masked_output(zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan);
-                else
-                    [flat, idx] = spectrum.get_flatdata_single(zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan);
-                end
+                opts = unpack(options);
+                [flat, idx] = spectrum.get_flatdata_single(opts{:});
+
+
+%                 if options.select_random
+%                     [flat, idx] = spectrum.select_random(rand_num, zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan);
+%                 end
+% 
+%                 if options.use_mask
+%                     % Get masked flat spectral data
+%                     [flat, idx] = spectrum.get_masked_output(zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan);
+%                 else
+%                     [flat, idx] = spectrum.get_flatdata_single(zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan);
+%                 end
+
+                % Append data index
+                data_idx_vector = datidx * int32(ones(1, numel(idx)));
+                data_idx_out = [data_idx_out, data_idx_vector]; %#ok<AGROW>
+
+                % Append name
+                spectrum_name = spectrum.parent_container.display_name;
+                names(end+1) = spectrum_name; %#ok<AGROW>
                 
                 if ~options.ignore_nan
                     % Concatenate optimized and update column index
                     flatdata_out(:,colidx:colidx+numcols-1) = flat;
-                    idx_out(:,colidx:colidx+numcols-1) = idx;
+                    spec_idx_out(:,colidx:colidx+numcols-1) = idx;
                     colidx = colidx + numcols;
                 else
                     % Concatenate non-optimized
-                    flatdata_out = [flatdata_out; flat]; %#ok<AGROW>
-                    idx_out = [idx_out, idx]; %#ok<AGROW>
+                    flatdata_out = [flatdata_out, flat]; %#ok<AGROW>
+                    spec_idx_out = [spec_idx_out, idx]; %#ok<AGROW>
                 end
+
+                % Increase dataidx
+                datidx = datidx + 1;
             end
 
         end
 
-        function [out, idx] = get_flatdata_single(self, options)
+        function [output, idx] = get_flatdata_single(self, options)
             % Get flat data from single SpecData
             
             arguments
                 self SpecData;
                 options.zero_to_nan logical = false;
                 options.ignore_nan logical = true;
+                options.select_random logical = false;
+                options.rand_num int32 = 100;
+                options.use_mask logical = false;
+                options.create_mask logical = true;
+            end
+
+            if options.select_random
+                if options.use_mask
+                    [output, idx] = self.get_masked_output(zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan);
+                    return;
+                end
+
+                [output, idx] = self.select_random(rand_num, zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan);
+                return;
             end
 
             % Get spectral data
@@ -321,16 +372,18 @@ classdef SpecData < SpecDataABC
             if options.zero_to_nan, dat = SpecData.zero_to_nan(dat); end
 
             % Flatten
-            out = SpecData.flatten(dat);
-            numcols = size(out,2);
-            idx = [idx_out, 1:numcols];
+            output = SpecData.flatten(dat);
+            
+            % Provide row indices
+            numcols = size(output,2);
+            idx = 1:numcols;
 
             % Remove nans
-            if options.ignore_nan, [out, idx] = SpecData.remove_nan(out); end
+            if options.ignore_nan, [output, idx] = SpecData.remove_nan(output); end
 
         end
 
-        function [out, idx] = get_masked_output(self, options)
+        function [output, idx] = get_masked_output(self, options)
 
             arguments
                 self SpecData;
@@ -342,7 +395,7 @@ classdef SpecData < SpecDataABC
             if isempty(self.mask)
                 out("Argument 'use_mask' was set to TRUE, but SpecData does not have a mask. Outputting all data.");
                 opts = unpack(options);
-                [out, idx] = self.get_flatdata_single(opts{:});
+                [output, idx] = self.get_flatdata_single(opts{:}, "use_mask", false);
                 return;
             end
 
@@ -357,7 +410,7 @@ classdef SpecData < SpecDataABC
 
             % Mask
             idx = self.mask.flat_indices;
-            out = flat(:, idx);
+            output = flat(:, idx);
 
         end
 
@@ -502,6 +555,7 @@ classdef SpecData < SpecDataABC
         
         function set_filter(self, filter)
             self.active_filter = filter;
+            self.active_filter.parent_specdata = self;
         end
         
         function output = get.filter_output(self)
@@ -514,7 +568,7 @@ classdef SpecData < SpecDataABC
             end
             
             % Return output of filter
-            output = self.filter.getResult(self);
+            output = self.filter.get_result(self);
             
         end
 
@@ -603,12 +657,12 @@ classdef SpecData < SpecDataABC
             flatdata = SpecData.flatten(self.data);
         end
 
-        function filtereddata = get.FilteredData(self)
-            % Returns filtered and masked data
-
-            filtereddata = clipByMask(self, self.Mask, Clip=false);
-
-        end
+%         function filtereddata = get.FilteredData(self)
+%             % Returns filtered and masked data
+% 
+%             filtereddata = clipByMask(self, self.Mask, Clip=false);
+% 
+%         end
         
         
         %% Setter
