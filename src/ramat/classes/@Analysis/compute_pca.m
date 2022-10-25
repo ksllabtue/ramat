@@ -52,7 +52,8 @@ function pcaresult = compute_pca(self, options)
             use_mask=options.use_mask, ...
             create_mask=options.create_mask, ...
             zero_to_nan=options.zero_to_nan, ...
-            ignore_nan=options.ignore_nan);
+            ignore_nan=options.ignore_nan, ...
+            include_reflinks=true);
 
         s(i).accumsize = height(datatbl);
 
@@ -73,7 +74,7 @@ function pcaresult = compute_pca(self, options)
     end
 
     tbl = vertcat(s.tbl);
-    rmfield(s, 'tbl');
+    s = rmfield(s, 'tbl');
 
     data = tbl.data;
 
@@ -94,6 +95,16 @@ function pcaresult = compute_pca(self, options)
     pcaresult.name = sprintf("PCAResult from %s", self.display_name);
 
     pcaresult.generate_description();
+
+    % Cleaning and fixing
+    % Masks have been assigned to copies of specdata, assign them back to
+    % the originals
+    for i = 1:numel(s)
+        for spec_copy = s(i).specdata_prepared(:)'
+            spec_orig = spec_copy.parent_container.get_data();
+            spec_orig.set_mask(spec_copy.mask);
+        end
+    end
 
 end
 

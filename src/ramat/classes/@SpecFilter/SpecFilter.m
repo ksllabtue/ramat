@@ -128,7 +128,7 @@ classdef SpecFilter < DataItem
             uimenu(cm, Text="Plot spectral filter output", MenuSelectedFcn=@(~,~) plot(self));
 
             % Edit spectral filter
-            uimenu(cm, Text="Edit spectral filter");
+            uimenu(cm, Text="Edit spectral filter", MenuSelectedFcn=@(~,~) SpecAreaDataViewer(app, self.parent_container));
 
 
         end

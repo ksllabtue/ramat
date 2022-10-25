@@ -5,6 +5,10 @@ function updateScoresScatterPlot(app)
 
     pcx = app.PCXSpinner.Value;
     pcy = app.PCYSpinner.Value;
+    pcs = [pcx, pcy];
+
+    error_ellipses = app.PCAErrorEllipseCheckBox.Value;
+
 
     pcares = app.prj.get_active_pca_result();
     if isempty(pcares), return; end
@@ -12,8 +16,9 @@ function updateScoresScatterPlot(app)
     ax = app.UIPreviewAxes;
 
     % Update preview
-    pcares.scoresscatter([pcx pcy], ...
+    pcares.plot(...
         Axes=ax, ...
-        ErrorEllipse=app.PCAErrorEllipseCheckBox.Value);
+        PCs=pcs, ...
+        error_ellipses=error_ellipses);
 end
 

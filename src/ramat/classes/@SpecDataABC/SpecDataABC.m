@@ -138,6 +138,7 @@ classdef (Abstract) SpecDataABC < DataItem
                 options.spectrum_names_from_container logical = true;
                 options.use_mask logical = true;
                 options.create_mask logical = true;
+                options.include_reflinks logical = false;
             end
 
             if options.as_table
@@ -170,9 +171,16 @@ classdef (Abstract) SpecDataABC < DataItem
                 names_vector = names(specdat_idx);
 
                 % Attach index columns
-%                 indices = transpose([specdat_idx; subspec_idx]);
                 index_table = table(names_vector(:), specdat_idx(:), subspec_idx(:), VariableNames=["spectrum", "spec_idx", "subspec_idx"]);
+
                 output = [index_table, data_table];
+
+                % Include reflinks?
+                if options.include_reflinks
+                    specdat_vector = self(specdat_idx);
+                    reflink_table = table(specdat_vector(:), VariableNames="reflink");
+                    output = [output, reflink_table];
+                end
 
                 return;
             end

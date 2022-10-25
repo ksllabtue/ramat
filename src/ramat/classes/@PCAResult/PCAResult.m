@@ -90,14 +90,11 @@ classdef PCAResult < DataItem
         function recalculate(self)
             %RECALCULATE Recalculates PCA from linked analysis
 
-            range = [];
-            algorithm = "svd";
-
             % Retrieve original options
-            if isfield(self.source_opts, "range"), range = self.source_opts.range; end
-            if isfield(self.source_opts, "algorithm"), algorithm = self.source_opts.algorithm; end
-            
-            new_pca_result = self.source.compute_pca(Range=range, algorithm=algorithm);
+            options = rmfield(self.source_opts, ["invert_pcs", "ask_user_input"]);
+            opts = unpack(options);
+
+            new_pca_result = self.source.compute_pca(opts{:});
             self.update(new_pca_result);
         end
 
@@ -151,19 +148,10 @@ classdef PCAResult < DataItem
         
             % Convert scores to table
             scores = array2table(self.Score, VariableNames=pclabels);
-        
-            % Get spectrum, group, and sample names
-            spectra = vertcat(self.source_data.specdata);
-            spectra_names = vertcat(spectra.name);
-        
-            group_indices = self.source_group_indices;
-            group_names = vertcat(self.source_data.group_names);
-        
-            sample_indices = self.source_sample_indices;
-            sample_names = vertcat(self.source_data.sample_names);
-            
-            labels = table(spectra_names, group_indices, group_names, sample_indices, sample_names, ...
-                VariableNames=["spec_name", "group_index", "group_name", "sample_index", "sample_name"]);
+
+            % Meta labels from master table
+            labels = self.source_table(:, [5 1 2 3 4]);
+            labels.Properties.VariableNames = ["spec_name", "group_index", "group_name", "sample_index", "sample_name"];
         
             % Horzcat tables
             t = [labels, scores];
@@ -178,8 +166,8 @@ classdef PCAResult < DataItem
                 kwargs.?PlotOptions;
                 kwargs.Axes = [];
                 kwargs.PCs uint8 = [1 2];
-                kwargs.ErrorEllipse logical = false;
-                kwargs.CenteredAxes logical = true;
+                kwargs.error_ellipses logical = false;
+                kwargs.centered_axes logical = false;
                 kwargs.color_order = [];
             end
 
@@ -264,11 +252,12 @@ classdef PCAResult < DataItem
             % Add specific context actions for PCAResult
             menu_item = uimenu(cm, Text="Brushing / Masking ...");
 
-            brushed = get(app.UIPreviewAxes.Children, "BrushData");
-            brushed = horzcat(brushed{:});
+            ax = app.UIPreviewAxes;
+            brushed = self.get_gui_brushed_data(ax);
 
             uimenu(menu_item, Text="Output brushed data as table", MenuSelectedFcn=@(~,~) self.dump_brushed(brushed));
-            uimenu(menu_item, Text="Remove brushed data from mask", MenuSelectedFcn=@(~,~) self.remove_brushed(brushed));
+            uimenu(menu_item, Text="Remove brushed data from mask", MenuSelectedFcn=@(~,~) self.remove_by_index_from_mask(brushed));
+            uimenu(menu_item, Text="Plot brushed data locations in mask (can open multiple windows)", MenuSelectedFcn=@(~,~) self.plot_brushed(brushed));
 
             menu_item = uimenu(cm, Text="Export Scores ...");
 
@@ -307,25 +296,53 @@ classdef PCAResult < DataItem
 
         end
 
-        function dump_brushed(self, brushed)
-            brushed = find(brushed);
-            if isempty(brushed), return; end
-            disp(self.source_table(brushed, :));
+        function brushed = get_gui_brushed_data(self, ax)
+
+            arguments
+                self;
+                ax = [];    % axes
+            end
+
+            scat = findobj(ax.Children, "Type", "Scatter");
+            scat = flipud(scat);
+            brushed = get(scat, "BrushData");
+            brushed = find(horzcat(brushed{:}));
+
         end
 
-        function remove_brushed(self, brushed)
-            brushed = find(brushed);
-            if isempty(brushed), return; end
-            t = self.source_table(brushed, :);
+        function dump_brushed(self, idx)
+            if isempty(idx), return; end
+            dump_selection(self.source_table(idx, :));
+        end
 
+        function remove_by_index_from_mask(self, idx)
+
+            if isempty(idx), return; end
+            t = self.source_table(idx, :);
             numb = height(t);
+            out("Removing " + num2str(numb) + " subspectra.");
+
             for i = 1:numb
                 group = t.group_index(i);
                 spec_idx = t.spec_idx(i);
                 subspec_idx = t.subspec_idx(i);
 
-                
+                self.source_data(group).specdata(spec_idx).mask_by_index(subspec_idx);
             end
+        end
+
+        function plot_brushed(self, idx)
+            tbl = self.source_table(idx, :);
+            [sds, ~, sdidx] = unique(tbl.reflink, "stable");
+
+            for sd = sds(:)'
+                ax = sd.mask.plot();
+                ax.Children.CData = double(ax.Children.CData) .* 0.5;
+
+                highlight_indices = tbl(tbl.reflink == sd, :).subspec_idx;
+                ax.Children.CData(highlight_indices) = 2;
+            end
+
         end
 
         function export_scores(self, options)
