@@ -113,7 +113,7 @@ classdef (Abstract) SpecDataABC < DataItem
             
         end
 
-        function output = get_formatted_export_array(self, options)
+        function [output, wavenum] = get_formatted_export_array(self, options)
             %GET_FORMATTED_EXPORT_ARRAY Outputs formatted flat array ready
             %for export or printing.
             %
@@ -134,8 +134,11 @@ classdef (Abstract) SpecDataABC < DataItem
                 options.ignore_nan logical = true;
                 options.include_index_number logical = true;
                 options.as_table logical = false;       % Format as table (can only do horizontal!)
+                options.merge_data_cols logical = false;
                 options.spectrum_names_from_container logical = true;
                 options.use_mask logical = true;
+                options.create_mask logical = true;
+                options.include_reflinks logical = false;
             end
 
             if options.as_table
@@ -150,50 +153,7 @@ classdef (Abstract) SpecDataABC < DataItem
 
             % Get flat output of all data with corresponding specdata and
             % subspec indices
-            [flatdata, specdat_idx, subspec_idx, names] = self.get_flatdata(zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan, use_mask=options.use_mask);
-
-
-%             % Prepare for concatenation of multiple spectra
-%             num_items = numel(self);
-% 
-%             flatdata = [];
-%             specdat_idx = [];
-%             subspec_idx = [];
-%             names = string.empty();
-%             i = 1;
-% 
-%             % Go through every spectrum s in self
-%             for s = self(:)' 
-%                 % Create a data segment
-%                 dat_seg_size = 0;
-% 
-%                 if options.rand_subset
-%                     % Get a small selection
-%                     [dat, pos] = s.select_random(options.rand_num, zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan);
-%                 else
-%                     % Get everything
-%                     dat = s.get_flatdata(zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan, use_mask=options.use_mask);
-%                     pos = 1:size(dat,2);
-%                 end
-% 
-%                 dat_seg_size = size(dat,2);
-%                 if options.spectrum_names_from_container
-%                     dat_seg_name = s.parent_container.display_name;
-%                 else
-%                     dat_seg_name = s.name;
-%                 end
-% 
-%                 % Concatenate indexing and naming
-%                 current_index = i*ones([1, dat_seg_size]);
-%                 specdat_idx = [specdat_idx, current_index]; %#ok<AGROW>
-%                 subspec_idx = [subspec_idx, pos(:)']; %#ok<AGROW>
-%                 names = [dat_seg_name, repmat(s.parent_container.display_name, [1, dat_seg_size])];
-% 
-%                 % Cocatenate data segment.
-%                 flatdata = [flatdata dat]; %#ok<AGROW>
-% 
-%                 i = i+1;
-%             end
+            [flatdata, specdat_idx, subspec_idx, names] = self.get_flatdata(select_random=options.rand_subset, rand_num=options.rand_num, zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan, use_mask=options.use_mask, create_mask=options.create_mask);
 
             % Table output
             if options.as_table
@@ -201,19 +161,26 @@ classdef (Abstract) SpecDataABC < DataItem
                 data_table = array2table(flatdata);
                 
                 % Keep separated wavenumber columns?
-                if options.include_wavenum
-                    data_table.Properties.VariableNames = string(wavenum);
-                else
+                if options.merge_data_cols
                     data_table = mergevars(data_table, 1:width(data_table), NewVariableName="data");
+                else
+                    data_table.Properties.VariableNames = string(wavenum);
                 end
 
                 % Get full names vector
-                names_vector = names(subspec_idx);
+                names_vector = names(specdat_idx);
 
                 % Attach index columns
-                indices = transpose([specdat_idx; subspec_idx]);
-                index_table = table(names_vector', specdat_idx', subspec_idx', VariableNames=["spectrum", "spec_idx", "subspec_idx"]);
+                index_table = table(names_vector(:), specdat_idx(:), subspec_idx(:), VariableNames=["spectrum", "spec_idx", "subspec_idx"]);
+
                 output = [index_table, data_table];
+
+                % Include reflinks?
+                if options.include_reflinks
+                    specdat_vector = self(specdat_idx);
+                    reflink_table = table(specdat_vector(:), VariableNames="reflink");
+                    output = [output, reflink_table];
+                end
 
                 return;
             end

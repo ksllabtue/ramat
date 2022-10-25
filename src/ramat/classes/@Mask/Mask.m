@@ -8,6 +8,7 @@ classdef Mask < DataItem
 
     properties (Dependent)
         flat_indices int32;
+        dimensions int32;
         XSize;
         YSize;
         ZSize;
@@ -32,7 +33,30 @@ classdef Mask < DataItem
             self.data = data;
             self.parent_specdata = parent_specdata;
             self.name = name;
-            
+
+            % Fill with ones if no data provided
+            if isempty(self.data)
+                self.fill();
+            end            
+        end
+
+        function fill(self, options)
+
+            arguments
+                self Mask;
+                options.parent_specdata SpecData = SpecData.empty();
+                options.dimensions (1,2) int32 = [];
+            end
+
+            if isempty(options.dimensions)
+                if isempty(options.parent_specdata), options.parent_specdata = self.parent_specdata; end
+                if isempty(options.parent_specdata), return; end
+
+                options.dimensions = [options.parent_specdata.XSize, options.parent_specdata.YSize];
+            end
+
+            self.data = true(options.dimensions);
+
         end
 
         function generate_random(self, rand_num, options)
@@ -83,6 +107,34 @@ classdef Mask < DataItem
             [ax, f] = self.plot_start(Axes = options.Axes);
 
             imagesc(self.data);
+            
+            plotname = sprintf("%s", self.parent_container.display_name);
+            title(ax, plotname);
+            f.Name = plotname;
+
+        end
+
+        function unset_by_index(self, idx)
+
+            arguments
+                self Mask;
+                idx int32 = [];
+            end
+
+            if isempty(self.data), return; end
+            self.data(idx) = false;
+
+        end
+
+        function set_by_index(self, idx)
+
+            arguments
+                self Mask;
+                idx int32 = [];
+            end
+
+            if isempty(self.data), return; end
+            self.data(idx) = true;
 
         end
 
@@ -118,12 +170,18 @@ classdef Mask < DataItem
             flat_indices = find(flat_mask);
         end
 
+        function dim = get.dimensions(self)
+            dim = [];
+            if isempty(self.data), return; end
+            dim = int32([xres, yres]);
+        end
+
         function xres = get.XSize(self)
-            xres = size(self.Data, 1);
+            xres = size(self.data, 1);
         end
         
         function yres = get.YSize(self)
-            yres = size(self.Data, 2);
+            yres = size(self.data, 2);
         end
         
         function zres = get.ZSize(self)

@@ -165,9 +165,7 @@ classdef Project < handle
             
             arguments
                 self Project
-                options.Range = [];
-                options.Selection (:,:) DataContainer = DataContainer.empty;
-                options.algorithm string = "svd";
+                options PCAOptions;
             end
 
             result = [];
@@ -182,7 +180,9 @@ classdef Project < handle
             
             % Create PCA
             subset = self.ActiveAnalysis;
-            pcaresult = subset.compute_pca(Range=options.Range, Selection=options.Selection, algorithm=options.algorithm);
+
+            opts = unpack(struct(options));
+            pcaresult = subset.compute_pca(opts{:});
             if isempty(pcaresult), return; end
 
             % Pack in container

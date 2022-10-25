@@ -14,5 +14,7 @@ classdef PlotOptions
 
         % PCAs
         PCs uint8 = [1 2];
+        error_ellipses logical = false;
+        centered_axes logical = false;
     end
 end

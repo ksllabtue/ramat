@@ -10,8 +10,8 @@ function [ax, f] = scoresscatter(pcaresult, pcax, options)
         pcax uint8 = [1 2];
         options.?PlotOptions;
         options.Axes = []; % Handle to Axes, if empty a new figure will be created
-        options.ErrorEllipse logical = false;
-        options.CenteredAxes logical = true;
+        options.error_ellipses logical = false;
+        options.centered_axes logical = false;
         options.color_order = [];
         options.symbols = ["o", "square", "^", "v", "diamond"];
         options.use_symbols = false;
@@ -119,7 +119,7 @@ function [ax, f] = scoresscatter(pcaresult, pcax, options)
         end
         
         % Plot confidence ellipses
-        if (options.ErrorEllipse)
+        if (options.error_ellipses)
             error_ellipse( ...
                 pcaresult.Score(j:l+j-1, pcax(1)), ...
                 pcaresult.Score(j:l+j-1, pcax(2)), ...
@@ -144,7 +144,7 @@ function [ax, f] = scoresscatter(pcaresult, pcax, options)
     ax.Color = "none";
 
     % Position of axes
-    if options.CenteredAxes
+    if options.centered_axes
         ax.XAxisLocation = 'origin';
         ax.YAxisLocation = 'origin';
     else

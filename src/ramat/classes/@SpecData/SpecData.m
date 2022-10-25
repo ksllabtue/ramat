@@ -69,6 +69,12 @@ classdef SpecData < SpecDataABC
         out = clipByMask(self, mask);
         y = tsne(self, opts);
         out = trim_spectrum(self, range, opts);
+        tmpdata = prepare_multivariate_2(self, opts);
+        self = force_equal_graph_size(self);
+    end
+
+    methods (Static)
+        pcaresult = calculate_pca_static(opts);
     end
     
     methods
@@ -247,7 +253,7 @@ classdef SpecData < SpecDataABC
 
         end
 
-        function [flatdata_out, spec_idx_out, data_idx_out, names] = get_flatdata(self, options)
+        function [flatdata_out, data_idx_out, spec_idx_out, names] = get_flatdata(self, options)
             %GET_FLATDATA Returns m*n (two-dimensional) matrix.
             %   Returns flattened array. Input can be an array of multiple
             %   SpecData objects. In that case, the sizes should be
@@ -305,18 +311,6 @@ classdef SpecData < SpecDataABC
                 opts = unpack(options);
                 [flat, idx] = spectrum.get_flatdata_single(opts{:});
 
-
-%                 if options.select_random
-%                     [flat, idx] = spectrum.select_random(rand_num, zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan);
-%                 end
-% 
-%                 if options.use_mask
-%                     % Get masked flat spectral data
-%                     [flat, idx] = spectrum.get_masked_output(zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan);
-%                 else
-%                     [flat, idx] = spectrum.get_flatdata_single(zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan);
-%                 end
-
                 % Append data index
                 data_idx_vector = datidx * int32(ones(1, numel(idx)));
                 data_idx_out = [data_idx_out, data_idx_vector]; %#ok<AGROW>
@@ -357,7 +351,7 @@ classdef SpecData < SpecDataABC
 
             if options.select_random
                 if options.use_mask
-                    [output, idx] = self.get_masked_output(zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan);
+                    [output, idx] = self.get_masked_output(zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan, create_mask=options.create_mask, rand_num=options.rand_num);
                     return;
                 end
 
@@ -389,18 +383,24 @@ classdef SpecData < SpecDataABC
                 self SpecData;
                 options.zero_to_nan logical = false;
                 options.ignore_nan logical = true;
+                options.create_mask logical = false;
+                options.rand_num int32 = 100;
             end
 
             % Can we actually do masking?
-            if isempty(self.mask)
+            if isempty(self.mask) && ~options.create_mask
                 out("Argument 'use_mask' was set to TRUE, but SpecData does not have a mask. Outputting all data.");
                 opts = unpack(options);
                 [output, idx] = self.get_flatdata_single(opts{:}, "use_mask", false);
                 return;
             end
 
+            if isempty(self.mask) && options.create_mask
+                self.add_random_mask(options.rand_num, zero_to_nan=options.zero_to_nan, ignore_nan=options.ignore_nan);
+            end
+
             % Checks
-            assert(isvalid(self.mask), "Invalid mask object. Was the mask deleted? Please unset mask.");
+            assert(isvalid(self.mask), "Invalid mask object. Was the mask deleted? Please unset mask. To do so: right click the specdata item in the data item manager, select masking and unset the mask for every spectral data.");
             assert(all(size(self.mask.data) == [self.XSize, self.YSize]), "Mask dimensions do not match data dimensions.");
 
             % Get spectral data
@@ -515,6 +515,24 @@ classdef SpecData < SpecDataABC
                 if isempty(rand_num), return; end
                 if numel(rand_num) ~= 1, return; end
             end
+        end
+
+        function mask_by_index(self, idx)
+            
+            if isempty(self.mask)
+                self.add_mask();
+            end
+
+            self.mask.unset_by_index(idx);
+
+        end
+
+        function mask = add_mask(self)
+
+            mask = Mask([], self, "Default mask");
+            self.append_sibling(mask);
+            self.set_mask(mask);
+
         end
 
 
@@ -729,6 +747,11 @@ classdef SpecData < SpecDataABC
             if ~all(size(mask.data) == [self.XSize, self.YSize])
                 warning("Mask has different dimensions");
                 return;
+            end
+
+            % Is this mask already a sibling here?
+            if ~any(self.parent_container.children == mask)
+                self.append_sibling(mask);
             end
 
             % Set mask
