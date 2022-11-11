@@ -79,7 +79,7 @@ function error_ellipse(y1,y2,color, options)
     plot(ax, r_ellipse(:,1) + X0,r_ellipse(:,2) + Y0,'--','Color',color);
     % e.HandleVisibility = 'off';
 
-    scatter(ax, mean(y1),mean(y2),'+', MarkerEdgeColor=color);
+%     scatter(ax, mean(y1),mean(y2),'+', MarkerEdgeColor=color);
 
 
 end
