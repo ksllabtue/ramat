@@ -840,7 +840,7 @@ classdef SpecData < SpecDataABC
             shift = 0;
 
             % Apply multiplier to maximum value
-            maxs = max([spectra.FlatDataArray], [], "all");
+            maxs = max([spectra.data], [], "all");
             shift = maxs * multiplier;
 
         end

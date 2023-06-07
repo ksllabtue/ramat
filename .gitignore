@@ -1,2 +1,5 @@
 sample_data/*
 local/*
+
+*.png
+*.mldatx

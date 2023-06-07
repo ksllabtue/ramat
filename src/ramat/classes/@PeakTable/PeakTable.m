@@ -22,7 +22,7 @@ classdef PeakTable < DataItem
 
     % Method signatures
     methods
-        ax = plot(self, options)
+        [ax, f] = plot(self, options)
     end
 
     methods

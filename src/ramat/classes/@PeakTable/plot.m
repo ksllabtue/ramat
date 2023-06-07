@@ -1,4 +1,4 @@
-function ax = plot(self, options)
+function [ax, f] = plot(self, options)
     %PLOT Plots peaks with annotations, overloads default plot function.
     %   This is the default method to plot the peaks contained in the
     %   PeakTable. It only takes the PeakTable as necessary input argument,
@@ -17,6 +17,7 @@ function ax = plot(self, options)
         options.plot_type = "Overlaid";   % 'Overlaid', 'Stacked'
         options.plot_stack_distance = 1;   % Stacking Shift Multiplier
         options.fancy_peak_markers = true;
+        options.peak_markers_font_size = 12;
         options.plot_parent_spectra = true;
     end
 
@@ -37,7 +38,7 @@ function ax = plot(self, options)
 
     % Plot original linked spectral data
     if options.plot_parent_spectra
-        [ax, ~] = parent_spectra.plot(Axes = ax, plot_type = options.plot_type, plot_stack_distance = options.plot_stack_distance);        
+        [ax, f] = parent_spectra.plot(Axes = ax, plot_type = options.plot_type, plot_stack_distance = options.plot_stack_distance);        
         
         if options.plot_type == "Stacked"
             yshift = SpecData.calc_stackshift(parent_spectra, options.plot_stack_distance);
@@ -52,7 +53,7 @@ function ax = plot(self, options)
     % Get axes handle or create new figure window with empty axes
     % Do NOT reset plot, because we are going to add stuff if we plot over
     % a spectrum
-    [ax, ~] = self.plot_start(Axes = ax, reset=false);
+    [ax, f] = self.plot_start(Axes = ax, reset=false);
 
     % Hold axes, so peaks are added to existing plot
     hold(ax, "on");
@@ -75,7 +76,7 @@ function ax = plot(self, options)
     
             % Use fancy peak markers?
             if options.fancy_peak_markers
-                pm = PeakMarker(ax, peak.x, peak.y, peak.neg, fontsize=11);
+                pm = PeakMarker(ax, peak.x, peak.y, peak.neg, fontsize=options.peak_markers_font_size);
 
                 pm.fix_shift(-yshift * ti);
                 continue;

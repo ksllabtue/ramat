@@ -112,6 +112,7 @@ classdef PCAResult < DataItem
             self.Score = new_pcares.Score;
             self.Variance = new_pcares.Variance;
             self.source_data = new_pcares.source_data;
+            self.source_table = new_pcares.source_table;
 
         end
         
@@ -169,6 +170,7 @@ classdef PCAResult < DataItem
                 kwargs.error_ellipses logical = false;
                 kwargs.centered_axes logical = false;
                 kwargs.color_order = [];
+                kwargs.symbol_size = 1.0;
             end
 
             ax = [];

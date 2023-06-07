@@ -418,7 +418,7 @@ classdef DataContainer < Container
 
             % Call function of SpecDataABC
             options = unpack(options);
-            dat = data_items.normalize_spectrum(options{:});
+            data_items.normalize_spectrum(options{:});
         end
 
         function dat = trim_spectrum(self, range, options)

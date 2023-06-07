@@ -19,6 +19,8 @@ function prj = load_dataset(prj, options)
         '*.*',  'All Files (*.*)'}, ...
         'Select a Data Set');
     fullPath = fullfile(path, file);
+
+    out("Loading " + string(file) + " ...");
     
     % Load Dataset
     try
@@ -47,7 +49,7 @@ function prj = load_dataset(prj, options)
         app.DVRamanToolUIFigure.Name = app.prj.name;
     end
     
-    fprintf('Loaded %s successfully.\n', file);
+    fprintf('Successfully loaded %s \n', file);
     
 end
 

@@ -15,6 +15,7 @@ function [ax, f] = scoresscatter(pcaresult, pcax, options)
         options.color_order = [];
         options.symbols = ["o", "square", "^", "v", "diamond"];
         options.use_symbols = false;
+        options.symbol_size = 1.0;
     end
 
     if isempty(pcaresult.source_data)
@@ -81,7 +82,7 @@ function [ax, f] = scoresscatter(pcaresult, pcax, options)
         s(i) = scatter(ax, ...
             pcaresult.Score(j:l+j-1, pcax(1)), ...  % x-axis
             pcaresult.Score(j:l+j-1, pcax(2)), ... % inv. y-axis
-            45, ...                                 % size
+            45 * options.symbol_size, ...                                 % size
             color, ...                              % color
             'filled');                              % marker type
 
@@ -95,7 +96,7 @@ function [ax, f] = scoresscatter(pcaresult, pcax, options)
                 s(i).MarkerFaceColor = "none";
                 s(i).MarkerEdgeColor = "flat";
                 s(i).LineWidth = 1.5;
-                s(i).SizeData = 30;
+                s(i).SizeData = 30 * options.symbol_size;
             end
         end
 

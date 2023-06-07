@@ -151,7 +151,7 @@ classdef PeakMarker < handle
             for wavnum = self.x(:)'
                 annotation_string(i) = sprintf("%.*f", self.precision, wavnum); i = i+1;
             end
-            str = [annotation_string; ""; ""; repmat("",[numel(self.x),1])];
+            str = [annotation_string; ""; repmat("",[numel(self.x),1])];
 
             if self.neg, str = flipud(str); end
         end
